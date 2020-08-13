@@ -1,12 +1,3 @@
-var host = 'https://lamberthotels.com'; // for prod
-//var host = 'http://localhost:8080'; // for local
-
-function checkSSL() {
-	if (window.location.protocol != 'https:') {
- 		location.href = location.href.replace("http://", "https://");
- 	}
-}
-
 function getUrlVars() {
     var vars = [], hash;
     var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
@@ -47,10 +38,10 @@ function formatTime(input) {
 
 function changeDate() {
 	var lid = getUrlVars()["lid"] != null ? getUrlVars()["lid"] : 1;
-	window.location.href = host + '/scraper.html?lid=' + lid + '&start=' + $('#date').val();
+	window.location.href = '/scraper.html?lid=' + lid + '&start=' + $('#date').val();
 }
 
 function changeDateDetail() {
 	var hid = getUrlVars()["hid"] != null ? getUrlVars()["hid"] : 8;
-	window.location.href = host + '/scraperDetail.html?hid=' + hid + '&start=' + $('#date').val();
+	window.location.href = '/scraperDetail.html?hid=' + hid + '&start=' + $('#date').val();
 }

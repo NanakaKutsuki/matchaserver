@@ -8,13 +8,11 @@
 		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
 		<script>
 			document.addEventListener('DOMContentLoaded', function() {
-				checkSSL();
-				
-				$.get(host + '/rest/hotel/getNextRefresh', function(data) {	
+				$.get('/rest/hotel/getNextRefresh', function(data) {	
 					$('#nextRefresh').append('<p>Next Refresh: ' + data + '</p>');
 				});
 
-				$.getJSON(host + '/rest/hotel/getStatus', function(data) {				
+				$.getJSON('/rest/hotel/getStatus', function(data) {				
 					var tableString = '<h3>Running (' + data.length + ')</h3>\n';
 
 					if( data.length > 0) {
@@ -47,7 +45,7 @@
 					$('#running').append(tableString);
 				});
 				
-				$.getJSON(host + '/rest/hotel/getUnfinished', function(data) {
+				$.getJSON('/rest/hotel/getUnfinished', function(data) {
 					var tableString = '<h3>Unfinished (' + data.length + ')</h3>\n';
 					
 					if( data.length > 0 ) {
@@ -80,7 +78,7 @@
 					$('#unfinished').append(tableString);
 				});
 			
-				$.getJSON(host + '/rest/hotel/getAll', function(data) {
+				$.getJSON('/rest/hotel/getAll', function(data) {
 					var tableString = '<h3>Hotel Models (' + data.length + ')</h3>\n';
 					tableString += '<div class="table-wrapper">\n';
 					tableString += '<table>\n';
@@ -109,7 +107,7 @@
 					$('#hotelData').append(tableString);
 				});
 				
-				$.getJSON(host + '/rest/location/getAll', function(data) {
+				$.getJSON('/rest/location/getAll', function(data) {
 					var tableString = '<h3>Location Models (' + data.length + ')</h3>\n';
 					tableString += '<div class="table-wrapper">\n';
 					tableString += '<table>\n';

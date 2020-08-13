@@ -8,8 +8,6 @@
 		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
 		<script>
 			document.addEventListener('DOMContentLoaded', function() {
-				checkSSL();
-			
 				var lid = 1;
 				var hid = getUrlVars()["hid"] != null ? getUrlVars()["hid"] : 8;
 				var hotelName = '';
@@ -20,12 +18,12 @@
 				$('#startDate').append(start.toLocaleDateString("en-US", dateOptions));
 				$('#date').val(start.toISOString().split('T')[0]);
 				
-				$.getJSON(host + '/rest/hotel/getHotel?hotelId=' + hid, function(data) {
+				$.getJSON('/rest/hotel/getHotel?hotelId=' + hid, function(data) {
 					$('#hotelName').append(data.name);
 					lid = data.locationId;
 				});
 				
-				$.getJSON(host + '/rest/location/getAll', function(data) {
+				$.getJSON('/rest/location/getAll', function(data) {
 					var menuString = '<ul>';
 				
 					$.each(data, function(i, location) {
@@ -47,7 +45,7 @@
 					$('#menu').append(menuString);
 				});
 				
-				$.getJSON(host + '/rest/room/getRoomDetail?hid=' + hid + '&start=' + start.toISOString().split('T')[0], function(data) {
+				$.getJSON('/rest/room/getRoomDetail?hid=' + hid + '&start=' + start.toISOString().split('T')[0], function(data) {
 					var tableString = '';
 				
 					if( data.length != 0 ) {
