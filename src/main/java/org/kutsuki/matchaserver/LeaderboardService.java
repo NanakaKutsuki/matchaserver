@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Random;
 
 import org.apache.commons.lang3.StringUtils;
-import org.kutsuki.model.LeaderboardModel;
+import org.kutsuki.matchaserver.model.LeaderboardModel;
 
 public class LeaderboardService {
     private static final String LEADERBOARDS = " Leaderboards";

@@ -12,11 +12,11 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import org.apache.commons.lang3.StringUtils;
-import org.kutsuki.dao.DaoManager;
-import org.kutsuki.model.beating.BeatingBiggest;
-import org.kutsuki.model.beating.BeatingCount;
-import org.kutsuki.model.beating.BeatingResult;
-import org.kutsuki.model.beating.EventModel;
+import org.kutsuki.matchaserver.dao.DaoManager;
+import org.kutsuki.matchaserver.model.beating.BeatingBiggest;
+import org.kutsuki.matchaserver.model.beating.BeatingCount;
+import org.kutsuki.matchaserver.model.beating.BeatingResult;
+import org.kutsuki.matchaserver.model.beating.EventModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
