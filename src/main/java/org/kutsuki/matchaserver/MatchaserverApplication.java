@@ -4,7 +4,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 //TODO
-// double check if host is broken
+// fix ssl
+// fix dao
+// convert to mongodb
 @SpringBootApplication
 public class MatchaserverApplication {
     public static void main(String[] args) {
