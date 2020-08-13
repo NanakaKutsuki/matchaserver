@@ -1,0 +1,205 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>Lambert Hotels - Scraper</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+		<script>
+			document.addEventListener('DOMContentLoaded', function() {
+				checkSSL();
+				
+				$.get(host + '/rest/hotel/getNextRefresh', function(data) {	
+					$('#nextRefresh').append('<p>Next Refresh: ' + data + '</p>');
+				});
+
+				$.getJSON(host + '/rest/hotel/getStatus', function(data) {				
+					var tableString = '<h3>Running (' + data.length + ')</h3>\n';
+
+					if( data.length > 0) {
+						tableString += '<div class="table-wrapper">\n';
+						tableString += '<table>\n';
+						tableString += '<thead>\n';
+						tableString += '<tr>\n';
+						tableString += '<th>Id</th>\n';
+						tableString += '<th>Name</th>\n';
+						tableString += '<th>Retries</th>\n';
+						tableString += '</tr>\n';
+						tableString += '</thead>\n';
+						tableString += '<tbody>\n';
+
+						$.each(data, function(i, model) {
+							tableString += '<tr>\n';
+							tableString += '<td>' + model.id + '</td>\n';
+							tableString += '<td>' + model.name + '</td>\n';
+							tableString += '<td>' + model.retries + '</td>\n';
+							tableString += '</tr>\n';
+						});
+						
+						tableString += '</tbody>\n';
+						tableString += '</table>\n';
+						tableString += '</div>\n';
+					} else {
+						tableString += 'Nothing currently running.';
+					}
+					
+					$('#running').append(tableString);
+				});
+				
+				$.getJSON(host + '/rest/hotel/getUnfinished', function(data) {
+					var tableString = '<h3>Unfinished (' + data.length + ')</h3>\n';
+					
+					if( data.length > 0 ) {
+						tableString += '<div class="table-wrapper">\n';
+						tableString += '<table>\n';
+						tableString += '<thead>\n';
+						tableString += '<tr>\n';
+						tableString += '<th>Id</th>\n';
+						tableString += '<th>Name</th>\n';
+						tableString += '<th>Retries</th>\n';
+						tableString += '</tr>\n';
+						tableString += '</thead>\n';
+						tableString += '<tbody>\n';
+
+						$.each(data, function(i, model) {
+							tableString += '<tr>\n';
+							tableString += '<td>' + model.id + '</td>\n';
+							tableString += '<td>' + model.name + '</td>\n';
+							tableString += '<td>' + model.retries + '</td>\n';
+							tableString += '</tr>\n';
+						});
+						
+						tableString += '</tbody>\n';
+						tableString += '</table>\n';
+						tableString += '</div>\n';
+					} else {
+						tableString += 'All Finished!';
+					}
+					
+					$('#unfinished').append(tableString);
+				});
+			
+				$.getJSON(host + '/rest/hotel/getAll', function(data) {
+					var tableString = '<h3>Hotel Models (' + data.length + ')</h3>\n';
+					tableString += '<div class="table-wrapper">\n';
+					tableString += '<table>\n';
+					tableString += '<thead>\n';
+					tableString += '<tr>\n';
+					tableString += '<th>Id</th>\n';
+					tableString += '<th>Name</th>\n';
+					tableString += '<th>Lid</th>\n';
+					tableString += '<th>Active</th>\n';
+					tableString += '</tr>\n';
+					tableString += '</thead>\n';
+					tableString += '<tbody>\n';
+
+					$.each(data, function(i, model) {
+						tableString += '<tr>\n';
+						tableString += '<td>' + model.id + '</td>\n';
+						tableString += '<td>' + model.name + '</td>\n';
+						tableString += '<td>' + model.locationId + '</td>\n';
+						tableString += '<td>' + model.active + '</td>\n';
+						tableString += '</tr>\n';
+					});
+					
+					tableString += '</tbody>\n';
+					tableString += '</table>\n';
+					tableString += '</div>\n';
+					$('#hotelData').append(tableString);
+				});
+				
+				$.getJSON(host + '/rest/location/getAll', function(data) {
+					var tableString = '<h3>Location Models (' + data.length + ')</h3>\n';
+					tableString += '<div class="table-wrapper">\n';
+					tableString += '<table>\n';
+					tableString += '<thead>\n';
+					tableString += '<tr>\n';
+					tableString += '<th>Id</th>\n';
+					tableString += '<th>Location</th>\n';
+					tableString += '<th>Email</th>\n';
+					tableString += '</tr>\n';
+					tableString += '</thead>\n';
+					tableString += '<tbody>\n';
+
+					$.each(data, function(i, model) {
+						tableString += '<tr>\n';
+						tableString += '<td>' + model.id + '</td>\n';
+						tableString += '<td>' + model.location + '</td>\n';
+						tableString += '<td>' + model.email + '</td>\n';
+						tableString += '</tr>\n';
+					});
+					
+					tableString += '</tbody>\n';
+					tableString += '</table>\n';
+					tableString += '</div>\n';
+					$('#locationData').append(tableString);
+				});
+			});
+		</script>
+	</head>
+	<body class="is-preload">
+
+		<!-- Page Wrapper -->
+			<div id="page-wrapper">
+
+				<!-- Header -->
+					<header id="header">
+						<h1>Scraper Status</h1>
+						<nav id="nav">
+							<ul>
+								<li class="special">
+									<a href="#menu" class="menuToggle"><span>Menu</span></a>
+									<div id="menu">
+										<ul>
+											<li><a href="#main" class="more scrolly">Next Refresh</a></li>
+											<li><a href="#running" class="more scrolly">Running</a></li>
+											<li><a href="#unfinished" class="more scrolly">Unfinished</a></li>
+											<li><a href="#hotelData" class="more scrolly">Hotel Models</a></li>
+											<li><a href="#locationData" class="more scrolly">Location Models</a></li>
+										</ul>
+									</div>
+								</li>
+							</ul>
+						</nav>
+					</header>
+
+				<!-- Main -->
+					<article id="main">
+						<header>
+							<h2>Scraper Status</h2>
+							<div id="nextRefresh"></div>
+						</header>
+						<section class="wrapper style5">
+							<div class="inner">
+								<div id="running"></div>
+								<hr />
+								<div id="unfinished"></div>
+								<hr />
+								<div id="hotelData"></div>
+								<hr />
+								<div id="locationData"></div>
+							</div>
+						</section>
+					</article>
+
+				<!-- Footer -->
+					<footer id="footer">
+						<ul class="copyright">
+							<li>&copy; Lambert Hotels</li>
+						</ul>
+					</footer>
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.scrollex.min.js"></script>
+			<script src="assets/js/jquery.scrolly.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+			<script src="assets/js/lambert.js"></script>
+	</body>
+</html>

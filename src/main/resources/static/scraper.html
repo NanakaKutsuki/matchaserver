@@ -1,0 +1,147 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>Lambert Hotels - Scraper</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+		<script>
+			document.addEventListener('DOMContentLoaded', function() {
+				checkSSL();
+			
+				var lid = getUrlVars()["lid"] != null ? getUrlVars()["lid"] : 1;
+				var start = getUrlVars()["start"] != null ? parseDate(getUrlVars()["start"]) : new Date();
+				var dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+				
+				$('#startDate').append('<p>Starting: ').append(start.toLocaleDateString("en-US", dateOptions)).append('</p>');
+				$('#date').val(start.toISOString().split('T')[0]);
+				
+				$.getJSON(host + '/rest/location/getAll', function(data) {
+					var menuString = '<ul>';
+				
+					$.each(data, function(i, location) {
+						var l = new String(location.location);
+						var city = l.substring(0, l.indexOf(','));
+						
+						if( location.id == lid ) {
+							$('#headerTitle').append(l);
+						}
+						
+						menuString += '<li><a href="scraper.html?lid=' 
+								+ location.id
+								+ '">'
+								+ city
+								+ '</a></li>';
+					});
+					menuString += '</ul>';
+					$('#menu').append(menuString);
+				});
+				
+				$.getJSON(host + '/rest/room/getRooms?lid=' + lid + '&start=' + start.toISOString().split('T')[0], function(data) {
+					var eventDate = '';
+					var tableString = '';
+					var days = 0;
+				
+					if( data.length != 0 ) {
+						$.each(data, function(i, event) {
+							if( eventDate !== event.date ) {
+								if( eventDate.length != 0 ) {
+									tableString += '</tbody>\n';
+									tableString += '</table>\n';
+									tableString += '</div>\n';
+									tableString += '<hr />\n';
+								}
+							
+								tableString += '<h3>' + parseDate(event.date).toLocaleDateString("en-US", dateOptions) + '</h3>\n';
+								tableString += '<div class="table-wrapper">\n';
+								tableString += '<table>\n';
+								tableString += '<thead>\n';
+								tableString += '<tr>\n';
+								tableString += '<th>Name</th>\n';
+								tableString += '<th>Rate</th>\n';
+								tableString += '</tr>\n';
+								tableString += '</thead>\n';
+								tableString += '<tbody>\n';
+								
+								days++;
+							}
+								
+							tableString += '<tr>\n';
+							tableString += '<td><a href="scraperDetail.html?hid=' + event.hid + '&start=' + event.date + '">' + event.name + '</a></td>\n';
+							tableString += '<td>' + event.rate + '</td>\n';
+							tableString += '</tr>\n';
+
+							eventDate = event.date;
+						});
+					} else {
+						tableString = 'No data for this date.';
+					}
+					
+					$('#tableData').append(tableString);
+					$('#daysFooter').append('Last ' + days + ' days shown.');
+				});
+			});
+		</script>
+	</head>
+	<body class="is-preload">
+
+		<!-- Page Wrapper -->
+			<div id="page-wrapper">
+
+				<!-- Header -->
+					<header id="header">
+						<h1><div id="headerTitle"></div></h1>
+						<nav id="nav">
+							<ul>
+								<li class="special">
+									<a href="#menu" class="menuToggle"><span>Menu</span></a>
+									<div id="menu"></div>
+								</li>
+							</ul>
+						</nav>
+					</header>
+
+				<!-- Main -->
+					<article id="main">
+						<header>
+							<h2>The Scraper</h2>
+							<div id="startDate"></div>
+						</header>
+						<section class="wrapper style5">
+							<div class="inner">
+								<div class="row gtr-uniform">
+										<div class="col-12">
+											<ul class="actions">
+												<li><input type="date" name="date" id="date" value="" placeholder="date" /></li>
+												<li><input type="button" value="Change Date" class="primary" onclick="changeDate()" /></li>
+											</ul>
+										</div>
+								</div>
+								<hr />
+								<div id="tableData"></div>
+							</div>
+						</section>
+					</article>
+
+				<!-- Footer -->
+					<footer id="footer">
+						<p><div id='daysFooter'></div></p>
+						<ul class="copyright">
+							<li>&copy; Lambert Hotels</li>
+						</ul>
+					</footer>
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.scrollex.min.js"></script>
+			<script src="assets/js/jquery.scrolly.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+			<script src="assets/js/lambert.js"></script>
+	</body>
+</html>
