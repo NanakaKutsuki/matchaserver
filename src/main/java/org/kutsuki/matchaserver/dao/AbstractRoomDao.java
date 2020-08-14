@@ -20,7 +20,6 @@ import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.index.query.TermQueryBuilder;
-import org.kutsuki.matchaserver.EmailManager;
 import org.kutsuki.matchaserver.model.HotelModel;
 import org.kutsuki.matchaserver.model.LocationModel;
 import org.kutsuki.matchaserver.model.RoomModel;
@@ -114,7 +113,7 @@ public abstract class AbstractRoomDao extends AbstractDao<RoomModel> {
 		}
 	    }
 	} catch (DateTimeParseException e) {
-	    EmailManager.emailException("Unable to parse start date while getRooms", e);
+	    DaoManager.EMAIL.emailException("Unable to parse start date while getRooms", e);
 	}
 
 	return eventList;

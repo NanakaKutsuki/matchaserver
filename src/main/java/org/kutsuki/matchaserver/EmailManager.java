@@ -18,11 +18,10 @@ import javax.mail.internet.MimeMultipart;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 
 public class EmailManager {
-    private static final Logger LOGGER = LoggerFactory.getLogger(EmailManager.class);
-
-    public static final String HOME = "nanakakutsuki@gmail.com";
+    private Logger logger = LoggerFactory.getLogger(EmailManager.class);
 
     private static final int RETRY = 5;
     private static final String EXCEPTION_SUBJECT = "Exception Thrown";
@@ -30,31 +29,45 @@ public class EmailManager {
     private static final String MAIL_SMTP_HOST = "mail.smtp.host";
     private static final String MAIL_SMTP_PORT = "mail.smtp.port";
     private static final String MAIL_SMTP_STARTTLS_ENABLE = "mail.smtp.starttls.enable";
-    private static final String MIDORI = "Green";
     private static final String PORT = "587";
     private static final String SIGNATURE = "<br/><br/>--<br/>Sentinel";
     private static final String SMTP = "smtp.ionos.com";
     private static final String TEXT_HTML = "text/html";
-    private static final String USERNAME = "matcha.green@kutsuki.org";
-    private static final String USERNAME_SENTINEL = "noreply@sentinel-corp.com";
+
+    @Value("${email.home}")
+    private String home;
+
+    @Value("${email.matcha}")
+    private String matchaUser;
+
+    @Value("${email.sentinel}")
+    private String sentinelUser;
+
+    @Value("${email.pass}")
+    private String pass;
 
     // email
-    public static boolean email(String subject, String body) {
-	return email(HOME, subject, body, null);
+    public boolean email(String to, String subject, String body) {
+	return email(matchaUser, to, subject, body, null);
+    }
+
+    // email with attachments
+    public boolean emailAttachment(String to, String subject, String body, List<String> attachments) {
+	return email(matchaUser, to, subject, body, attachments);
+    }
+
+    // email Home
+    public boolean emailHome(String subject, String body) {
+	return email(matchaUser, home, subject, body, null);
+    }
+
+    // email Sentinel
+    public boolean emailSentinel(String to, String subject, String body) {
+	return email(sentinelUser, to, subject, body, null);
     }
 
     // email
-    public static boolean email(String to, String subject, String body, List<String> attachments) {
-	return email(USERNAME, to, subject, body, null);
-    }
-
-    // email
-    public static boolean emailSentinel(String to, String subject, String body) {
-	return email(USERNAME_SENTINEL, to, subject, body, null);
-    }
-
-    // email
-    public static boolean email(final String user, String to, String subject, String body, List<String> attachments) {
+    public boolean email(final String user, String to, String subject, String body, List<String> attachments) {
 	Properties props = new Properties();
 	props.put(MAIL_SMTP_AUTH, Boolean.TRUE);
 	props.put(MAIL_SMTP_STARTTLS_ENABLE, Boolean.TRUE);
@@ -63,8 +76,7 @@ public class EmailManager {
 
 	Session session = Session.getInstance(props, new Authenticator() {
 	    protected PasswordAuthentication getPasswordAuthentication() {
-		return new PasswordAuthentication(user,
-			MIDORI + Integer.toString(0) + Integer.toString(0) + Character.toString(')'));
+		return new PasswordAuthentication(user, pass);
 	    }
 	});
 
@@ -95,14 +107,14 @@ public class EmailManager {
 
 	    message.setContent(mp);
 	} catch (Exception e) {
-	    LOGGER.error("Failed to create message: " + to + StringUtils.SPACE + subject, e);
+	    logger.error("Failed to create message: " + to + StringUtils.SPACE + subject, e);
 	}
 
 	return sendMessage(message);
     }
 
     // emailException
-    public static boolean emailException(String message, Throwable e) {
+    public boolean emailException(String message, Throwable e) {
 	StringBuilder sb = new StringBuilder();
 	sb.append(message);
 	sb.append(System.lineSeparator());
@@ -118,11 +130,11 @@ public class EmailManager {
 	    sb.append(System.lineSeparator());
 	}
 
-	return email(HOME, EXCEPTION_SUBJECT, sb.toString(), null);
+	return emailHome(EXCEPTION_SUBJECT, sb.toString());
     }
 
     // sendMessage
-    private static boolean sendMessage(Message message) {
+    private boolean sendMessage(Message message) {
 	boolean success = false;
 
 	if (message != null) {

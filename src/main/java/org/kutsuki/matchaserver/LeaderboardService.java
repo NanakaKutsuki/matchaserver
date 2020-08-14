@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Random;
 
 import org.apache.commons.lang3.StringUtils;
+import org.kutsuki.matchaserver.dao.DaoManager;
 import org.kutsuki.matchaserver.model.LeaderboardModel;
 
 public class LeaderboardService {
@@ -153,14 +154,14 @@ public class LeaderboardService {
 		sb.append(TABLE_END);
 
 		System.out.println("mailto: " + model.getEmail());
-		EmailManager.emailSentinel(model.getEmail(), subject, sb.toString());
+		DaoManager.EMAIL.emailSentinel(model.getEmail(), subject, sb.toString());
 
 		if (i == sendHome) {
-		    EmailManager.emailSentinel(EmailManager.HOME, model.getEmail(), sb.toString());
+		    DaoManager.EMAIL.emailHome(model.getEmail(), sb.toString());
 		}
 	    }
 	} catch (IOException e) {
-	    EmailManager.emailException("Error while reading from File!", e);
+	    DaoManager.EMAIL.emailException("Error while reading from File!", e);
 	}
     }
 

@@ -15,7 +15,6 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.SearchHit;
-import org.kutsuki.matchaserver.EmailManager;
 import org.kutsuki.matchaserver.model.AbstractModel;
 
 import com.google.gson.Gson;
@@ -34,6 +33,7 @@ public abstract class AbstractDao<T extends AbstractModel> {
     }
 
     // index
+    @SuppressWarnings("deprecation")
     public void index(T model) {
 	try {
 	    IndexResponse response = null;
@@ -50,7 +50,7 @@ public abstract class AbstractDao<T extends AbstractModel> {
 	    }
 	} catch (ElasticsearchException e) {
 	    String error = "Failed to index: " + model + " into " + getIndex() + ", " + getType();
-	    EmailManager.emailException(error, e);
+	    DaoManager.EMAIL.emailException(error, e);
 	}
     }
 
@@ -61,11 +61,11 @@ public abstract class AbstractDao<T extends AbstractModel> {
 
 	    if (response.getResult() != Result.DELETED) {
 		String error = "Failed to delete: " + model + " in " + getIndex() + ", " + getType();
-		EmailManager.email(EmailManager.HOME, error, model.toString(), null);
+		DaoManager.EMAIL.emailHome(error, model.toString());
 	    }
 	} catch (ElasticsearchException e) {
 	    String error = "Failed to delete: " + model + " in " + getIndex() + ", " + getType();
-	    EmailManager.emailException(error, e);
+	    DaoManager.EMAIL.emailException(error, e);
 	}
     }
 
@@ -82,7 +82,7 @@ public abstract class AbstractDao<T extends AbstractModel> {
 	    }
 	} catch (ElasticsearchException e) {
 	    String error = "Failed to get by id: " + id + " in " + getIndex() + ", " + getType();
-	    EmailManager.emailException(error, e);
+	    DaoManager.EMAIL.emailException(error, e);
 	}
 
 	return model;
@@ -127,7 +127,7 @@ public abstract class AbstractDao<T extends AbstractModel> {
 		error = "Failed to get all " + getIndex() + ", " + getType();
 	    }
 
-	    EmailManager.emailException(error, e);
+	    DaoManager.EMAIL.emailException(error, e);
 	}
 
 	return list;
@@ -162,7 +162,7 @@ public abstract class AbstractDao<T extends AbstractModel> {
 		error = "Failed to count all " + getIndex() + ", " + getType();
 	    }
 
-	    EmailManager.emailException(error, e);
+	    DaoManager.EMAIL.emailException(error, e);
 	}
 
 	return count;

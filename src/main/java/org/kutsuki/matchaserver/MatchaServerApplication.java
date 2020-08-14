@@ -4,6 +4,7 @@ import org.apache.catalina.Context;
 import org.apache.catalina.connector.Connector;
 import org.apache.tomcat.util.descriptor.web.SecurityCollection;
 import org.apache.tomcat.util.descriptor.web.SecurityConstraint;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
@@ -14,11 +15,16 @@ import org.springframework.context.annotation.Bean;
 // convert to mongodb
 // change back to 2.3.2.RELEASE
 // undo the test cases
-// add emails to properties ?
 @SpringBootApplication
-public class MatchaserverApplication {
+public class MatchaServerApplication {
+    @Value("${local.port}")
+    private int port;
+
+    @Value("${server.port}")
+    private int redirectPort;
+
     public static void main(String[] args) {
-	SpringApplication.run(MatchaserverApplication.class, args);
+	SpringApplication.run(MatchaServerApplication.class, args);
     }
 
     @Bean
@@ -42,9 +48,9 @@ public class MatchaserverApplication {
     private Connector redirectConnector() {
 	Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
 	connector.setScheme("http");
-	connector.setPort(8080);
+	connector.setPort(port);
 	connector.setSecure(false);
-	connector.setRedirectPort(8443);
+	connector.setRedirectPort(redirectPort);
 	return connector;
     }
 }
