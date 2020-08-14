@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Bean;
 // convert to mongodb
 // change back to 2.3.2.RELEASE
 // undo the test cases
-// add emails to properties ?
+// add emails to properties?
 @SpringBootApplication
 public class MatchaserverApplication {
     public static void main(String[] args) {
