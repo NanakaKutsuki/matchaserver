@@ -1,6 +1,8 @@
-package org.kutsuki.matchaserver.model;
+package org.kutsuki.matchaserver.model.scraper;
 
 import java.math.BigDecimal;
+
+import org.kutsuki.matchaserver.model.AbstractDateTimeModel;
 
 public class RoomSummaryModel extends AbstractDateTimeModel implements Comparable<RoomSummaryModel> {
     private static final transient long serialVersionUID = -7055663053579028478L;

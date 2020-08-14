@@ -13,9 +13,9 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.kutsuki.matchaserver.EmailManager;
-import org.kutsuki.matchaserver.model.HotelModel;
-import org.kutsuki.matchaserver.model.RoomModel;
-import org.kutsuki.matchaserver.model.RoomSummaryModel;
+import org.kutsuki.matchaserver.model.scraper.HotelModel;
+import org.kutsuki.matchaserver.model.scraper.RoomModel;
+import org.kutsuki.matchaserver.model.scraper.RoomSummaryModel;
 
 public class RoomDao extends AbstractRoomDao {
     private static final BigDecimal ALERT = BigDecimal.TEN;

@@ -1,9 +1,10 @@
-package org.kutsuki.matchaserver.model;
+package org.kutsuki.matchaserver.model.scraper;
 
 import java.time.ZonedDateTime;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.kutsuki.matchaserver.model.AbstractModel;
 
 public class HotelModel extends AbstractModel implements Comparable<HotelModel> {
     private static final long serialVersionUID = 6057107340374642484L;

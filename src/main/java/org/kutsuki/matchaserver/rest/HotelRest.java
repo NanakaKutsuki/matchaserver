@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.kutsuki.matchaserver.dao.DaoManager;
-import org.kutsuki.matchaserver.model.HotelModel;
+import org.kutsuki.matchaserver.model.scraper.HotelModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;

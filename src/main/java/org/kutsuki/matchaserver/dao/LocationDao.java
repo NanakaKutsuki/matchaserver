@@ -1,6 +1,6 @@
 package org.kutsuki.matchaserver.dao;
 
-import org.kutsuki.matchaserver.model.LocationModel;
+import org.kutsuki.matchaserver.model.scraper.LocationModel;
 
 public class LocationDao extends AbstractDao<LocationModel> {
     private static final String TYPE = "location";

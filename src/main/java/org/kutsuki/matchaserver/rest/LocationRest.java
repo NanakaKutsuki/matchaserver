@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.kutsuki.matchaserver.dao.DaoManager;
-import org.kutsuki.matchaserver.model.LocationModel;
+import org.kutsuki.matchaserver.model.scraper.LocationModel;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 

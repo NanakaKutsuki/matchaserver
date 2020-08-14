@@ -16,7 +16,7 @@ import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.kutsuki.matchaserver.EmailManager;
-import org.kutsuki.matchaserver.model.HotelModel;
+import org.kutsuki.matchaserver.model.scraper.HotelModel;
 
 public class HotelDao extends AbstractDao<HotelModel> {
     private static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyy-MM-dd");

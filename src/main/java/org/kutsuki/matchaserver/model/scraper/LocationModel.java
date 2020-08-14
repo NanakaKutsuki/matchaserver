@@ -1,4 +1,6 @@
-package org.kutsuki.matchaserver.model;
+package org.kutsuki.matchaserver.model.scraper;
+
+import org.kutsuki.matchaserver.model.AbstractModel;
 
 public class LocationModel extends AbstractModel implements Comparable<LocationModel> {
     private static final long serialVersionUID = 6787126613305482388L;

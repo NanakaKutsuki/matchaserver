@@ -21,10 +21,10 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.kutsuki.matchaserver.EmailManager;
-import org.kutsuki.matchaserver.model.HotelModel;
-import org.kutsuki.matchaserver.model.LocationModel;
-import org.kutsuki.matchaserver.model.RoomModel;
-import org.kutsuki.matchaserver.model.ScraperModel;
+import org.kutsuki.matchaserver.model.scraper.HotelModel;
+import org.kutsuki.matchaserver.model.scraper.LocationModel;
+import org.kutsuki.matchaserver.model.scraper.RoomModel;
+import org.kutsuki.matchaserver.model.scraper.ScraperModel;
 
 public abstract class AbstractRoomDao extends AbstractDao<RoomModel> {
     protected static final NumberFormat CURRENCY = NumberFormat.getCurrencyInstance();
