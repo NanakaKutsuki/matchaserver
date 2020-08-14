@@ -12,6 +12,7 @@ import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.index.query.TermQueryBuilder;
+import org.kutsuki.matchaserver.EmailManager;
 import org.kutsuki.matchaserver.model.HotelModel;
 import org.kutsuki.matchaserver.model.RoomModel;
 import org.kutsuki.matchaserver.model.RoomSummaryModel;
@@ -46,7 +47,7 @@ public class RoomDao extends AbstractRoomDao {
 	sb.append("Current Rate: ").append(CURRENCY.format(room.getRate()));
 	sb.append("Generated: ").append(now());
 
-	DaoManager.EMAIL.email(to, subject, sb.toString());
+	EmailManager.email(to, subject, sb.toString());
     }
 
     @Override
@@ -63,7 +64,7 @@ public class RoomDao extends AbstractRoomDao {
 	sb.append("Generated: ").append(now());
 	sb.append("SOLD OUT!!!");
 
-	DaoManager.EMAIL.email(to, subject, sb.toString());
+	EmailManager.email(to, subject, sb.toString());
     }
 
     @Override
@@ -81,7 +82,7 @@ public class RoomDao extends AbstractRoomDao {
 	sb.append("Current Rate: ").append(CURRENCY.format(room.getRate()));
 	sb.append("Generated: ").append(now());
 
-	DaoManager.EMAIL.email(to, subject, sb.toString());
+	EmailManager.email(to, subject, sb.toString());
     }
 
     @Override

@@ -12,7 +12,6 @@ import org.kutsuki.matchaserver.EmailManager;
 public final class DaoManager {
     private static final String HOSTNAME = "70.35.201.164";
 
-    public static final EmailManager EMAIL = new EmailManager();
     public static final EventDao EVENT = new EventDao();
     public static final HotelDao HOTEL = new HotelDao();
     public static final LocationDao LOCATION = new LocationDao();
@@ -31,7 +30,7 @@ public final class DaoManager {
 	try {
 	    CLIENT.addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(HOSTNAME), PORT));
 	} catch (UnknownHostException e) {
-	    EMAIL.emailException("Error getting host by name: " + HOSTNAME, e);
+	    EmailManager.emailException("Error getting host by name: " + HOSTNAME, e);
 	}
 
 	// close on shutdown

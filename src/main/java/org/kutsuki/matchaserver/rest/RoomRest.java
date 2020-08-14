@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.kutsuki.matchaserver.EmailManager;
 import org.kutsuki.matchaserver.dao.DaoManager;
 import org.kutsuki.matchaserver.model.HotelModel;
 import org.kutsuki.matchaserver.model.LocationModel;
@@ -41,7 +42,7 @@ public class RoomRest {
 	} catch (NumberFormatException e) {
 	    String error = "Error parsing price: " + rate + " for: " + hotelModel.getName() + " at "
 		    + hotelModel.getLink();
-	    DaoManager.EMAIL.emailException(error, e);
+	    EmailManager.emailException(error, e);
 	}
 
 	// return finished
@@ -67,14 +68,14 @@ public class RoomRest {
     public void weeklySummary() {
 	for (LocationModel model : DaoManager.LOCATION.getAll()) {
 	    String subject = model.getLocation() + " Weekly Summary";
-	    DaoManager.EMAIL.email(model.getEmail(), subject, DaoManager.ROOM.getWeeklySummary(model.getId()));
+	    EmailManager.email(model.getEmail(), subject, DaoManager.ROOM.getWeeklySummary(model.getId()));
 	}
     }
 
     @Scheduled(cron = "0 0 11-21 * * *")
     public void checkLastRuntime() {
 	if (DaoManager.HOTEL.now().isAfter(DaoManager.HOTEL.getLastRuntime().plusHours(1).plusMinutes(30))) {
-	    DaoManager.EMAIL.emailHome("Check Scraper Box", "Last Runtime: " + DaoManager.HOTEL.getLastRuntime());
+	    EmailManager.emailHome("Check Scraper Box", "Last Runtime: " + DaoManager.HOTEL.getLastRuntime());
 	}
     }
 
@@ -93,8 +94,7 @@ public class RoomRest {
 	    subject.append('/');
 	    subject.append(now.getDayOfMonth());
 	    subject.append(')');
-	    DaoManager.EMAIL.email(model.getEmail(), subject.toString(),
-		    DaoManager.ROOM.getEveningSummary(model.getId()));
+	    EmailManager.email(model.getEmail(), subject.toString(), DaoManager.ROOM.getEveningSummary(model.getId()));
 	}
     }
 }

@@ -15,6 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
+import org.kutsuki.matchaserver.EmailManager;
 import org.kutsuki.matchaserver.model.HotelModel;
 
 public class HotelDao extends AbstractDao<HotelModel> {
@@ -82,13 +83,13 @@ public class HotelDao extends AbstractDao<HotelModel> {
 			    0, getMST());
 		    model.setNextRuntime(zdt);
 		} catch (DateTimeParseException e) {
-		    DaoManager.EMAIL.emailException("Exception thrown while parsing: " + date, e);
+		    EmailManager.emailException("Exception thrown while parsing: " + date, e);
 		}
 	    }
 	}
 
 	if (model == null) {
-	    DaoManager.EMAIL.emailHome("Unable to Find Hotel!", link);
+	    EmailManager.emailHome("Unable to Find Hotel!", link);
 	}
 
 	return model;
@@ -112,7 +113,7 @@ public class HotelDao extends AbstractDao<HotelModel> {
 		    sb.append(model.getId()).append(System.lineSeparator());
 		}
 
-		DaoManager.EMAIL.emailHome(now() + " Unfinished Hotels!", sb.toString());
+		EmailManager.emailHome(now() + " Unfinished Hotels!", sb.toString());
 	    }
 
 	    hotelList.clear();

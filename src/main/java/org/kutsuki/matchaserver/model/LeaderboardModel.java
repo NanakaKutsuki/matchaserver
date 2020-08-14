@@ -5,7 +5,7 @@ import java.math.RoundingMode;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.kutsuki.matchaserver.dao.DaoManager;
+import org.kutsuki.matchaserver.EmailManager;
 
 public class LeaderboardModel implements Comparable<LeaderboardModel> {
     private BigDecimal workedThisMonth;
@@ -38,7 +38,7 @@ public class LeaderboardModel implements Comparable<LeaderboardModel> {
 		this.email = s[10];
 	    }
 	} catch (NumberFormatException e) {
-	    DaoManager.EMAIL.emailException("Error while parsing LeaderboardModel", e);
+	    EmailManager.emailException("Error while parsing LeaderboardModel", e);
 	}
     }
 
