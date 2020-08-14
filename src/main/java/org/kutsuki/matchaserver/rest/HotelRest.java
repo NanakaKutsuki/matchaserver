@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class HotelRest {
     @GetMapping("/rest/hotel/getHotel")
-
     public HotelModel getHotel(@RequestParam("hotelId") String hotelId) {
 	return DaoManager.HOTEL.getById(hotelId);
     }

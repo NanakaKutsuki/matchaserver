@@ -152,7 +152,7 @@ public abstract class AbstractDao<T extends AbstractModel> {
 
 	    SearchResponse response = srb.get();
 
-	    count = response.getHits().getTotalHits().value;
+	    count = response.getHits().getTotalHits();
 	} catch (ElasticsearchException e) {
 	    String error = null;
 

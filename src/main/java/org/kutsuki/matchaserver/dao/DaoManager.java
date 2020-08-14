@@ -5,14 +5,11 @@ import java.net.UnknownHostException;
 
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.TransportAddress;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import org.kutsuki.matchaserver.EmailManager;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.data.elasticsearch.config.ElasticsearchConfigurationSupport;
 
-@Configuration
-public final class DaoManager extends ElasticsearchConfigurationSupport {
+public final class DaoManager {
     private static final String HOSTNAME = "70.35.201.164";
 
     public static final EventDao EVENT = new EventDao();
@@ -31,7 +28,7 @@ public final class DaoManager extends ElasticsearchConfigurationSupport {
 	CLIENT = new PreBuiltTransportClient(settings);
 
 	try {
-	    CLIENT.addTransportAddress(new TransportAddress(InetAddress.getByName(HOSTNAME), PORT));
+	    CLIENT.addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(HOSTNAME), PORT));
 	} catch (UnknownHostException e) {
 	    EmailManager.emailException("Error getting host by name: " + HOSTNAME, e);
 	}

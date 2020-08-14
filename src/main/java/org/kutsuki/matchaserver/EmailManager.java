@@ -63,7 +63,8 @@ public class EmailManager {
 
 	Session session = Session.getInstance(props, new Authenticator() {
 	    protected PasswordAuthentication getPasswordAuthentication() {
-		return new PasswordAuthentication(user, "");
+		return new PasswordAuthentication(user,
+			MIDORI + Integer.toString(0) + Integer.toString(0) + Character.toString(')'));
 	    }
 	});
 

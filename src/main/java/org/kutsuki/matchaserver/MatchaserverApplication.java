@@ -5,8 +5,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 //TODO
 // fix ssl
-// fix dao
 // convert to mongodb
+// change back to 2.3.2.RELEASE
+// undo the test cases
 @SpringBootApplication
 public class MatchaserverApplication {
     public static void main(String[] args) {
