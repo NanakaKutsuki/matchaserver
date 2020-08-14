@@ -33,7 +33,7 @@ public class EmailManager {
     private static final String MIDORI = "Green";
     private static final String PORT = "587";
     private static final String SIGNATURE = "<br/><br/>--<br/>Sentinel";
-    private static final String SMTP = "smtp.1and1.com";
+    private static final String SMTP = "smtp.ionos.com";
     private static final String TEXT_HTML = "text/html";
     private static final String USERNAME = "matcha.green@kutsuki.org";
     private static final String USERNAME_SENTINEL = "noreply@sentinel-corp.com";
