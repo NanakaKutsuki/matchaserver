@@ -59,7 +59,7 @@ public class HotelRest {
     }
 
     @GetMapping("/rest/hotel/getHotelById")
-    public Hotel getHotelById(@RequestParam("hotelId") String hotelId) {
+    public Hotel getHotelById(@RequestParam(value = "hotelId", defaultValue = "8") String hotelId) {
 	Hotel hotel = null;
 	Optional<Hotel> option = repository.findById(hotelId);
 
@@ -123,7 +123,7 @@ public class HotelRest {
 	    hotelList.clear();
 	    unfinishedMap.clear();
 
-	    for (Hotel hotel : repository.findByActive(true)) {
+	    for (Hotel hotel : repository.findAllByActive(true)) {
 		if (now.getHour() == 22) {
 		    hotel.setNextRuntime(now.plusDays(1));
 		} else {
@@ -183,7 +183,7 @@ public class HotelRest {
     }
 
     @GetMapping("/rest/hotel/getLink")
-    public String getLink(@RequestParam(name = "hotelId", defaultValue = "8") String hotelId) {
+    public String getLink(@RequestParam(value = "hotelId", defaultValue = "8") String hotelId) {
 	Hotel hotel = getHotelById(hotelId);
 
 	if (hotel != null) {
@@ -214,7 +214,7 @@ public class HotelRest {
     }
 
     @GetMapping("/rest/hotel/reloadHotel")
-    public ResponseEntity<String> reloadHotel(@RequestParam("hotelId") String hotelId) {
+    public ResponseEntity<String> reloadHotel(@RequestParam(value = "hotelId", required = true) String hotelId) {
 	Hotel hotel = getHotelById(hotelId);
 
 	if (hotel != null) {
@@ -234,8 +234,8 @@ public class HotelRest {
     }
 
     @GetMapping("/rest/hotel/reloadHotels")
-    public ResponseEntity<String> reloadHotels(@RequestParam("cityId") String cityId) {
-	for (Hotel hotel : repository.findByCityIdAndActive(cityId, true)) {
+    public ResponseEntity<String> reloadHotels(@RequestParam(value = "cityId", required = true) String cityId) {
+	for (Hotel hotel : repository.findAllByCityIdAndActive(cityId, true)) {
 	    hotel.setNextRuntime(now());
 	    hotel.setRetries(0);
 

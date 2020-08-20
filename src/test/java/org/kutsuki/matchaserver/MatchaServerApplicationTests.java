@@ -34,21 +34,19 @@ public class MatchaServerApplicationTests {
 //	    e.printStackTrace();
 //	}
 
-	System.out.println(repository.findByCityIdAndActive("1", true).size());
-
 	int count = 0;
 	for (Hotel hotel : repository.findAll()) {
 	    if (hotel.getCityId().equals("1") && hotel.isActive()) {
-		System.out.println(hotel);
 		count++;
 	    }
 	}
 
 	System.out.println(count);
 
-	Assertions.assertTrue(count == repository.findByCityIdAndActive("1", true).size(), "Not same number of active");
+	Assertions.assertTrue(count == repository.findAllByCityIdAndActive("1", true).size(),
+		"Not same number of active");
 
-	Assertions.assertTrue(repository.count() > 0, "Unable to connect to Collection");
+	Assertions.assertTrue(count > 0, "Count is 0");
     }
 
 }

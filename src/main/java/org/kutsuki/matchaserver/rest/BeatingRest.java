@@ -36,7 +36,7 @@ public class BeatingRest {
     private BeatingRepository repository;
 
     private BeatingBiggest biggest;
-    private List<Beating> eventList;
+    private List<Beating> beatingList;
     private List<String> loseList;
     private List<String> placeList;
     private List<String> playerList;
@@ -64,11 +64,11 @@ public class BeatingRest {
 		&& StringUtils.isNotBlank(loser) && StringUtils.isNotBlank(total)
 		&& StringUtils.isNotBlank(playerMap)) {
 	    try {
-		Beating model = new Beating();
-		model.setId(Integer.toString(nextId));
-		model.setLocalDate(LocalDate.parse(date));
-		model.setPlace(place);
-		model.setLoser(loser);
+		Beating beating = new Beating();
+		beating.setId(Integer.toString(nextId));
+		beating.setLocalDate(LocalDate.parse(date));
+		beating.setPlace(place);
+		beating.setLoser(loser);
 
 		int totalCards = 0;
 		Map<String, Integer> map = new HashMap<String, Integer>();
@@ -80,16 +80,16 @@ public class BeatingRest {
 		    totalCards += cards;
 		    map.put(player, cards);
 		}
-		model.setPlayerMap(map);
+		beating.setPlayerMap(map);
 
 		BigDecimal bd = new BigDecimal(total);
-		model.setTotal(bd);
+		beating.setTotal(bd);
 
 		BigDecimal costPerPerson = bd.divide(BigDecimal.valueOf(totalCards), 2, RoundingMode.HALF_UP);
-		model.setFancy(costPerPerson.compareTo(FANCY) == 1);
+		beating.setFancy(costPerPerson.compareTo(FANCY) == 1);
 
-		repository.insert(model);
-		eventList.add(model);
+		repository.insert(beating);
+		beatingList.add(beating);
 		reloadCache(false);
 	    } catch (DateTimeParseException | NumberFormatException e) {
 		EmailManager.emailException("Error Adding Beating", e);
@@ -101,7 +101,7 @@ public class BeatingRest {
 
     @GetMapping("/rest/beating/getAll")
     public List<Beating> getAll() {
-	return eventList;
+	return beatingList;
     }
 
     @GetMapping("/rest/beating/getBeatings")
@@ -141,48 +141,48 @@ public class BeatingRest {
 	this.winList = new ArrayList<String>();
 
 	// go through each event
-	for (Beating event : eventList) {
-	    if (dateFilter(event.getLocalDate(), startDate, endDate)) {
+	for (Beating beating : beatingList) {
+	    if (dateFilter(beating.getLocalDate(), startDate, endDate)) {
 		// get total cards played
-		BigDecimal totalCards = getTotalCards(event);
+		BigDecimal totalCards = getTotalCards(beating);
 
 		// calc value per card
-		BigDecimal costPerCard = event.getTotal().divide(totalCards, 4, RoundingMode.HALF_UP);
+		BigDecimal costPerCard = beating.getTotal().divide(totalCards, 4, RoundingMode.HALF_UP);
 
 		// fancy filter, no cost per person greater than 65.
-		if (!(fancy && event.isFancy())) {
+		if (!(fancy && beating.isFancy())) {
 		    // add total cost per person
 		    totalCostPerPerson = totalCostPerPerson.add(costPerCard);
 
 		    // add total spent
-		    totalSpent = totalSpent.add(event.getTotal());
+		    totalSpent = totalSpent.add(beating.getTotal());
 
 		    // go through each player
-		    for (Entry<String, Integer> e : event.getPlayerMap().entrySet()) {
+		    for (Entry<String, Integer> e : beating.getPlayerMap().entrySet()) {
 			String player = e.getKey();
 			int cards = e.getValue();
 
-			calcExpected(expectedMap, player, event.getLoser(), cards, totalCards);
-			calcMayor(mayorMap, event.getPlace(), player, cards, costPerCard);
+			calcExpected(expectedMap, player, beating.getLoser(), cards, totalCards);
+			calcMayor(mayorMap, beating.getPlace(), player, cards, costPerCard);
 			calcPlayed(playedMap, player, cards);
-			calcStreak(streakMap, player, event.getLoser());
+			calcStreak(streakMap, player, beating.getLoser());
 			calcValue(valueMap, player, cards, costPerCard);
-			calcVersus(versusMap, event.getPlayerMap(), player, event.getLoser(), cards, costPerCard);
+			calcVersus(versusMap, beating.getPlayerMap(), player, beating.getLoser(), cards, costPerCard);
 		    }
 
 		    // subtract value from loser
-		    mayorMap.get(event.getPlace()).put(event.getLoser(),
-			    getMapBD(mayorMap.get(event.getPlace()), event.getLoser()).subtract(event.getTotal()));
-		    valueMap.put(event.getLoser(), getMapBD(valueMap, event.getLoser()).subtract(event.getTotal()));
+		    mayorMap.get(beating.getPlace()).put(beating.getLoser(),
+			    getMapBD(mayorMap.get(beating.getPlace()), beating.getLoser()).subtract(beating.getTotal()));
+		    valueMap.put(beating.getLoser(), getMapBD(valueMap, beating.getLoser()).subtract(beating.getTotal()));
 
 		    // add loss
-		    lossesMap.put(event.getLoser(), getMapInt(lossesMap, event.getLoser()) + 1);
+		    lossesMap.put(beating.getLoser(), getMapInt(lossesMap, beating.getLoser()) + 1);
 
 		    // add place map
-		    placeMap.put(event.getPlace(), getMapInt(placeMap, event.getPlace()) + 1);
+		    placeMap.put(beating.getPlace(), getMapInt(placeMap, beating.getPlace()) + 1);
 
 		    // calc biggest beating
-		    calcBiggest(event);
+		    calcBiggest(beating);
 
 		    // increment number of events
 		    numEvents++;
@@ -252,9 +252,9 @@ public class BeatingRest {
     }
 
     // calcBiggestBeating
-    private void calcBiggest(Beating event) {
-	if (event.getTotal().compareTo(biggest.getValue()) == 1) {
-	    this.biggest = new BeatingBiggest(event.getLoser(), event.getPlace(), event.getTotal());
+    private void calcBiggest(Beating beating) {
+	if (beating.getTotal().compareTo(biggest.getValue()) == 1) {
+	    this.biggest = new BeatingBiggest(beating.getLoser(), beating.getPlace(), beating.getTotal());
 	}
     }
 
@@ -409,9 +409,9 @@ public class BeatingRest {
     }
 
     // getTotalCardsPlayed
-    private BigDecimal getTotalCards(Beating event) {
+    private BigDecimal getTotalCards(Beating beating) {
 	int cards = 0;
-	for (int i : event.getPlayerMap().values()) {
+	for (int i : beating.getPlayerMap().values()) {
 	    cards += i;
 	}
 
@@ -421,21 +421,21 @@ public class BeatingRest {
     // reloadCache
     private void reloadCache(boolean full) {
 	if (full) {
-	    this.eventList = repository.findAll();
+	    this.beatingList = repository.findAll();
 	}
 
-	Collections.sort(eventList);
+	Collections.sort(beatingList);
 
-	this.nextId = eventList.size() + 1;
+	this.nextId = beatingList.size() + 1;
 
 	this.placeList.clear();
 	this.playerList.clear();
-	for (Beating model : eventList) {
-	    if (!placeList.contains(model.getPlace())) {
-		placeList.add(model.getPlace());
+	for (Beating beating : beatingList) {
+	    if (!placeList.contains(beating.getPlace())) {
+		placeList.add(beating.getPlace());
 	    }
 
-	    for (String player : model.getPlayerMap().keySet()) {
+	    for (String player : beating.getPlayerMap().keySet()) {
 		if (!playerList.contains(player)) {
 		    playerList.add(player);
 		}
