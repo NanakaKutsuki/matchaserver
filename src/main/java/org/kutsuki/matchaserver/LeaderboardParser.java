@@ -16,7 +16,7 @@ import java.util.Random;
 import org.apache.commons.lang3.StringUtils;
 import org.kutsuki.matchaserver.document.LeaderboardModel;
 
-public class LeaderboardService {
+public class LeaderboardParser {
     private static final String LEADERBOARDS = " Leaderboards";
     private static final String YOU = "You";
     private static final String AVERAGE = "Company Average";
@@ -54,7 +54,7 @@ public class LeaderboardService {
     private List<LocalDate> holidayList;
     private LocalDate endDate;
 
-    public LeaderboardService() {
+    public LeaderboardParser() {
 	this.holidayList = new ArrayList<LocalDate>();
 	this.holidayList.add(LocalDate.of(2020, 1, 1));
 	this.holidayList.add(LocalDate.of(2020, 1, 20));
@@ -204,7 +204,7 @@ public class LeaderboardService {
     }
 
     public static void main(String[] args) {
-	LeaderboardService rest = new LeaderboardService();
+	LeaderboardParser rest = new LeaderboardParser();
 	rest.send();
     }
 }
