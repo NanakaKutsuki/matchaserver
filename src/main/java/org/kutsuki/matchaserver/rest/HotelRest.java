@@ -15,7 +15,7 @@ import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
 import org.kutsuki.matchaserver.EmailManager;
-import org.kutsuki.matchaserver.model.scraper.Hotel;
+import org.kutsuki.matchaserver.document.Hotel;
 import org.kutsuki.matchaserver.repository.HotelRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

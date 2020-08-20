@@ -16,10 +16,10 @@ import javax.annotation.PostConstruct;
 
 import org.apache.commons.lang3.StringUtils;
 import org.kutsuki.matchaserver.EmailManager;
-import org.kutsuki.matchaserver.model.beating.Beating;
-import org.kutsuki.matchaserver.model.beating.BeatingBiggest;
-import org.kutsuki.matchaserver.model.beating.BeatingCount;
-import org.kutsuki.matchaserver.model.beating.BeatingResult;
+import org.kutsuki.matchaserver.beating.BeatingBiggest;
+import org.kutsuki.matchaserver.beating.BeatingCount;
+import org.kutsuki.matchaserver.beating.BeatingResult;
+import org.kutsuki.matchaserver.document.Beating;
 import org.kutsuki.matchaserver.repository.BeatingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

@@ -1,8 +1,7 @@
-package org.kutsuki.matchaserver.model.scraper;
+package org.kutsuki.matchaserver.document;
 
 import java.math.BigDecimal;
 
-import org.kutsuki.matchaserver.model.AbstractDateDocument;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document

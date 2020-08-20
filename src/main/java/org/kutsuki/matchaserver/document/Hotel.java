@@ -1,10 +1,9 @@
-package org.kutsuki.matchaserver.model.scraper;
+package org.kutsuki.matchaserver.document;
 
 import java.time.ZonedDateTime;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.kutsuki.matchaserver.model.AbstractDocument;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
 

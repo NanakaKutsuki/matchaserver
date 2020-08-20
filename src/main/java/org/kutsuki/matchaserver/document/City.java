@@ -1,6 +1,5 @@
-package org.kutsuki.matchaserver.model.scraper;
+package org.kutsuki.matchaserver.document;
 
-import org.kutsuki.matchaserver.model.AbstractDocument;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document

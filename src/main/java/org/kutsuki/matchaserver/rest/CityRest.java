@@ -3,7 +3,7 @@ package org.kutsuki.matchaserver.rest;
 import java.util.Collections;
 import java.util.List;
 
-import org.kutsuki.matchaserver.model.scraper.City;
+import org.kutsuki.matchaserver.document.City;
 import org.kutsuki.matchaserver.repository.CityRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;

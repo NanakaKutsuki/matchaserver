@@ -1,4 +1,4 @@
-package org.kutsuki.matchaserver.model.scraper;
+package org.kutsuki.matchaserver.document;
 
 public class ScraperModel {
     private String hid;

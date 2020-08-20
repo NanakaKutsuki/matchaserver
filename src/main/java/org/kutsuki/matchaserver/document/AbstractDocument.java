@@ -1,4 +1,4 @@
-package org.kutsuki.matchaserver.model;
+package org.kutsuki.matchaserver.document;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;

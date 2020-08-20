@@ -1,8 +1,6 @@
-package org.kutsuki.matchaserver.model.scraper;
+package org.kutsuki.matchaserver.document;
 
 import java.math.BigDecimal;
-
-import org.kutsuki.matchaserver.model.AbstractDateDocument;
 
 public class RoomSummaryModel extends AbstractDateDocument implements Comparable<RoomSummaryModel> {
     private String hotelName;
