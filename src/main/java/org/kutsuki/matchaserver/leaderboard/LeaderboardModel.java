@@ -1,4 +1,4 @@
-package org.kutsuki.matchaserver.document;
+package org.kutsuki.matchaserver.leaderboard;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
