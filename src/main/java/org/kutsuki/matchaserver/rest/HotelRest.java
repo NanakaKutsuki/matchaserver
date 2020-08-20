@@ -1,11 +1,23 @@
 package org.kutsuki.matchaserver.rest;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
-import org.kutsuki.matchaserver.dao.DaoManager;
-import org.kutsuki.matchaserver.model.scraper.HotelModel;
+import org.kutsuki.matchaserver.EmailManager;
+import org.kutsuki.matchaserver.model.scraper.Hotel;
+import org.kutsuki.matchaserver.repository.HotelRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -13,65 +25,227 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class HotelRest {
-    @GetMapping("/rest/hotel/getHotel")
-    public HotelModel getHotel(@RequestParam("hotelId") String hotelId) {
-	return DaoManager.HOTEL.getById(hotelId);
-    }
+    private static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final int MAX_RETRIES = 5;
+    private static final String HEADER = "https://www.trivago.com/?";
+    private static final String ARRIVE = "aDateRange[arr]=";
+    private static final String DEPART = "&aDateRange[dep]=";
+    private static final String RANGE = "&aPriceRange[from]=0&aPriceRange[to]=0";
+    private static final String PATH_ID = "&iPathId=";
+    private static final String LAT = "&aGeoCode[lat]=";
+    private static final String LON = "&aGeoCode[lng]=";
+    private static final String GEO_DISTANCE_ITEM = "&iGeoDistanceItem=";
+    private static final String CPT = "&aCategoryRange=0,1,2,3,4,5&aOverallLiking=1,2,3,4,5&sOrderBy=relevance%20desc&bTopDealsOnly=false&iRoomType=7&cpt=";
+    private static final String FOOTER = "&iIncludeAll=0&iViewType=0&bIsSeoPage=false&bIsSitemap=false&";
+    private static final String LSB_HTML = "%5B";
+    private static final String RSB_HTML = "%5D";
+    private static final ZoneId MST = ZoneId.of("America/Denver");
 
-    @GetMapping("/rest/hotel/getNextHotel")
-    public String getNextHotel() {
-	return DaoManager.HOTEL.getNextHotel();
-    }
+    private boolean restart;
+    private List<String> hotelList;
+    private Map<String, Hotel> unfinishedMap;
+    private ZonedDateTime lastCompleted;
+    private ZonedDateTime lastRuntime;
+    private ZonedDateTime nextRefresh;
 
-    @GetMapping("/rest/hotel/getNextRefresh")
-    public String getNextRefresh() {
-	return DaoManager.HOTEL.getNextRefresh().toLocalDateTime().toString();
-    }
-
-    @GetMapping("/rest/hotel/getStatus")
-    public List<HotelModel> getStatus() {
-	return DaoManager.HOTEL.getStatus();
-    }
-
-    @GetMapping("/rest/hotel/getUnfinished")
-    public List<HotelModel> getUnfinished() {
-	return DaoManager.HOTEL.getUnfinished();
-    }
-
-    @GetMapping("/rest/hotel/getLink")
-    public String getLink(@RequestParam("hotelId") String hotelId) {
-	if (StringUtils.isBlank(hotelId)) {
-	    hotelId = Integer.toString(8);
-	}
-
-	HotelModel model = DaoManager.HOTEL.getById(hotelId);
-	model.setNextRuntime(DaoManager.HOTEL.now());
-	return DaoManager.HOTEL.getLink(model);
-    }
+    @Autowired
+    private HotelRepository repository;
 
     @GetMapping("/rest/hotel/getAll")
-    public List<HotelModel> getAll() {
-	List<HotelModel> hotelList = DaoManager.HOTEL.getAll();
+    public List<Hotel> getAll() {
+	List<Hotel> hotelList = repository.findAll();
 	Collections.sort(hotelList);
 	return hotelList;
     }
 
+    @GetMapping("/rest/hotel/getHotelById")
+    public Hotel getHotelById(@RequestParam("hotelId") String hotelId) {
+	Hotel hotel = null;
+	Optional<Hotel> option = repository.findById(hotelId);
+
+	if (option.isPresent()) {
+	    hotel = option.get();
+	}
+
+	return hotel;
+    }
+
+    // getByLink
+    public Hotel getHotelByLink(String href) {
+	Hotel hotel = null;
+
+	String link = StringUtils.replace(href, LSB_HTML, Character.toString('['));
+	link = StringUtils.replace(link, RSB_HTML, Character.toString(']'));
+
+	String trivagoId = StringUtils.substringBetween(link, GEO_DISTANCE_ITEM, Character.toString('&'));
+	String date = StringUtils.substringBetween(link, ARRIVE, Character.toString('&'));
+
+	if (StringUtils.isNotBlank(trivagoId) && StringUtils.isNotBlank(date)) {
+	    hotel = repository.findByTrivagoId(trivagoId);
+	    if (hotel != null) {
+		try {
+		    ZonedDateTime zdt = ZonedDateTime.of(LocalDate.parse(date, DTF), LocalTime.MIN, MST);
+		    hotel.setNextRuntime(zdt);
+		} catch (DateTimeParseException e) {
+		    EmailManager.emailException("Exception thrown while parsing: " + date, e);
+		}
+	    }
+	}
+
+	if (hotel == null) {
+	    EmailManager.emailHome("Unable to Find Hotel!", link);
+	}
+
+	return hotel;
+    }
+
+    @GetMapping("/rest/hotel/getNextHotel")
+    public String getNextHotel() {
+	Hotel nextHotel = null;
+	ZonedDateTime now = now();
+
+	if (now.isAfter(nextRefresh) && now.getHour() >= 9 && now.getHour() <= 22) {
+	    if (!unfinishedMap.isEmpty()) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Check Scraper!!!");
+		sb.append(System.lineSeparator());
+		sb.append(System.lineSeparator());
+
+		for (Hotel hotel : unfinishedMap.values()) {
+		    sb.append(hotel.getName());
+		    sb.append(' ');
+		    sb.append(hotel.getId()).append(System.lineSeparator());
+		}
+
+		EmailManager.emailHome(now() + " Unfinished Hotels!", sb.toString());
+	    }
+
+	    hotelList.clear();
+	    unfinishedMap.clear();
+
+	    for (Hotel hotel : repository.findByActive(true)) {
+		if (now.getHour() == 22) {
+		    hotel.setNextRuntime(now.plusDays(1));
+		} else {
+		    hotel.setNextRuntime(now);
+		}
+
+		hotel.setRetries(0);
+
+		hotelList.add(hotel.getId());
+		unfinishedMap.put(hotel.getId(), hotel);
+	    }
+
+	    Collections.shuffle(hotelList);
+	    setNextRefresh();
+	    lastCompleted = now();
+	}
+
+	if (hotelList.isEmpty() && now().isAfter(lastCompleted.plusMinutes(1))) {
+	    for (Hotel hotel : unfinishedMap.values()) {
+		if (hotel.getRetries() < MAX_RETRIES) {
+		    hotel.setRetries(hotel.getRetries() + 1);
+		    hotelList.add(hotel.getId());
+		}
+	    }
+
+	    lastCompleted = now();
+	}
+
+	if (!hotelList.isEmpty()) {
+	    nextHotel = unfinishedMap.get(hotelList.remove(0));
+	}
+
+	lastRuntime = now;
+	return getLink(nextHotel);
+    }
+
+    @GetMapping("/rest/hotel/getNextRefresh")
+    public String getNextRefresh() {
+	return nextRefresh.toString();
+    }
+
+    @GetMapping("/rest/hotel/getStatus")
+    public List<Hotel> getStatus() {
+	List<Hotel> statusList = new ArrayList<Hotel>();
+
+	for (String id : hotelList) {
+	    Hotel hotel = unfinishedMap.get(id);
+	    statusList.add(hotel);
+	}
+
+	return statusList;
+    }
+
+    @GetMapping("/rest/hotel/getUnfinished")
+    public List<Hotel> getUnfinished() {
+	return new ArrayList<Hotel>(unfinishedMap.values());
+    }
+
+    @GetMapping("/rest/hotel/getLink")
+    public String getLink(@RequestParam(name = "hotelId", defaultValue = "8") String hotelId) {
+	Hotel hotel = getHotelById(hotelId);
+
+	if (hotel != null) {
+	    hotel.setNextRuntime(now());
+	}
+
+	return getLink(hotel);
+    }
+
     @GetMapping("/rest/hotel/isRestart")
     public Boolean isRestart() {
-	return DaoManager.HOTEL.isRestart();
+	boolean result = restart;
+
+	if (now().toLocalTime().isAfter(lastRuntime.toLocalTime().plusMinutes(3))) {
+	    Iterator<Hotel> itr = unfinishedMap.values().iterator();
+	    while (!restart && itr.hasNext()) {
+		if (itr.next().getRetries() < MAX_RETRIES) {
+		    restart = true;
+		}
+	    }
+	}
+
+	if (restart) {
+	    this.restart = false;
+	}
+
+	return result;
     }
 
     @GetMapping("/rest/hotel/reloadHotel")
-    public ResponseEntity<String> reloadHotel(@RequestParam("hid") String hid) {
-	DaoManager.HOTEL.reloadHotel(hid);
+    public ResponseEntity<String> reloadHotel(@RequestParam("hotelId") String hotelId) {
+	Hotel hotel = getHotelById(hotelId);
+
+	if (hotel != null) {
+	    hotel.setNextRuntime(now());
+	    hotel.setRetries(0);
+
+	    if (!hotelList.contains(hotel.getId())) {
+		hotelList.add(hotel.getId());
+		unfinishedMap.put(hotel.getId(), hotel);
+	    }
+
+	    Collections.shuffle(hotelList);
+	}
 
 	// return finished
 	return ResponseEntity.ok().build();
     }
 
     @GetMapping("/rest/hotel/reloadHotels")
-    public ResponseEntity<String> reloadHotels(@RequestParam("lid") String lid) {
-	DaoManager.HOTEL.reloadHotels(lid);
+    public ResponseEntity<String> reloadHotels(@RequestParam("cityId") String cityId) {
+	for (Hotel hotel : repository.findByCityIdAndActive(cityId, true)) {
+	    hotel.setNextRuntime(now());
+	    hotel.setRetries(0);
+
+	    if (!hotelList.contains(hotel.getId())) {
+		hotelList.add(hotel.getId());
+		unfinishedMap.put(hotel.getId(), hotel);
+	    }
+	}
+
+	Collections.shuffle(hotelList);
 
 	// return finished
 	return ResponseEntity.ok().build();
@@ -79,9 +253,60 @@ public class HotelRest {
 
     @GetMapping("/rest/hotel/restart")
     public ResponseEntity<String> restart() {
-	DaoManager.HOTEL.setRestart(true);
+	this.restart = true;
 
 	// return finished
 	return ResponseEntity.ok().build();
+    }
+
+    // getLink
+    private String getLink(Hotel hotel) {
+	String link = null;
+
+	if (hotel != null) {
+	    StringBuilder sb = new StringBuilder();
+
+	    sb.append(HEADER);
+	    sb.append(ARRIVE);
+	    sb.append(DTF.format(hotel.getNextRuntime()));
+	    sb.append(DEPART);
+	    sb.append(DTF.format(hotel.getNextRuntime().plusDays(1)));
+	    sb.append(RANGE);
+
+	    if (hotel.getPathId() != null) {
+		sb.append(PATH_ID);
+		sb.append(hotel.getPathId());
+	    }
+
+	    if (hotel.getLatitude() != null) {
+		sb.append(LAT);
+		sb.append(hotel.getLatitude());
+	    }
+
+	    if (hotel.getLongitude() != null) {
+		sb.append(LON);
+		sb.append(hotel.getLongitude());
+	    }
+
+	    sb.append(GEO_DISTANCE_ITEM);
+	    sb.append(hotel.getTrivagoId());
+	    // iGeoDistanceLimit here
+	    sb.append(CPT);
+	    sb.append(hotel.getCPT());
+	    sb.append(FOOTER);
+	    link = sb.toString();
+	}
+
+	return link;
+    }
+
+    // now
+    private ZonedDateTime now() {
+	return ZonedDateTime.now(MST);
+    }
+
+    // setNextRefresh
+    private void setNextRefresh() {
+	this.nextRefresh = now().plusHours(1).withMinute(0).withSecond(0).withNano(0);
     }
 }

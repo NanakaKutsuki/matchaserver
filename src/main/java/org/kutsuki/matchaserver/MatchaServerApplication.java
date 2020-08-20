@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Bean;
 //TODO
 // convert to mongodb
 // change back to 2.3.2.RELEASE
-// undo the test cases
+// undo beatings rest
 @SpringBootApplication
 public class MatchaServerApplication {
     @Value("${local.port}")

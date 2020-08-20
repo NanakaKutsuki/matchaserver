@@ -2,19 +2,25 @@ package org.kutsuki.matchaserver.model.beating;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.Map;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.kutsuki.matchaserver.model.AbstractModel;
+import org.kutsuki.matchaserver.model.AbstractDateDocument;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 //{"date":"2016-07-21","place":"Bon Chon","loser":"Chris Baird","total":50.25,"fancy":false,"playerMap":{"Jamie Duncan":1,"Paul Boudra":1,"Jay Owen":1,"Chris Baird":1}}
-public class EventModel extends AbstractModel implements Comparable<EventModel> {
-    private static final long serialVersionUID = -1020629980972217669L;
+@Document
+public class Beating extends AbstractDateDocument implements Comparable<Beating> {
+    @Transient
+    @JsonIgnore
+    private LocalDate localDate;
 
-    private transient LocalDate localDate;
-
-    private String date;
     private String place;
     private String loser;
     private BigDecimal total;
@@ -22,7 +28,7 @@ public class EventModel extends AbstractModel implements Comparable<EventModel> 
     private Map<String, Integer> playerMap;
 
     @Override
-    public int compareTo(EventModel rhs) {
+    public int compareTo(Beating rhs) {
 	int result = getLocalDate().compareTo(rhs.getLocalDate());
 
 	if (result == 0) {
@@ -41,7 +47,7 @@ public class EventModel extends AbstractModel implements Comparable<EventModel> 
 	} else if (obj == this) {
 	    equals = true;
 	} else {
-	    EventModel rhs = (EventModel) obj;
+	    Beating rhs = (Beating) obj;
 	    EqualsBuilder eb = new EqualsBuilder();
 	    eb.append(getDate(), rhs.getDate());
 	    eb.append(getPlace(), rhs.getPlace());
@@ -69,8 +75,8 @@ public class EventModel extends AbstractModel implements Comparable<EventModel> 
 
     // getLocalDate
     public LocalDate getLocalDate() {
-	if (localDate == null && date != null) {
-	    localDate = LocalDate.parse(date);
+	if (localDate == null && getDate() != null) {
+	    localDate = getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 	}
 
 	return localDate;
@@ -79,15 +85,7 @@ public class EventModel extends AbstractModel implements Comparable<EventModel> 
     // setLocalDate
     public void setLocalDate(LocalDate localDate) {
 	this.localDate = localDate;
-	this.setDate(localDate.toString());
-    }
-
-    public String getDate() {
-	return date;
-    }
-
-    public void setDate(String date) {
-	this.date = date;
+	this.setDate(Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant()));
     }
 
     public String getPlace() {

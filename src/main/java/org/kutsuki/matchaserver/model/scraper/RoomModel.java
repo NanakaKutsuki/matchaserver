@@ -2,11 +2,11 @@ package org.kutsuki.matchaserver.model.scraper;
 
 import java.math.BigDecimal;
 
-import org.kutsuki.matchaserver.model.AbstractDateTimeModel;
+import org.kutsuki.matchaserver.model.AbstractDateDocument;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-public class RoomModel extends AbstractDateTimeModel implements Comparable<RoomModel> {
-    private static final transient long serialVersionUID = -2628173653322721464L;
-
+@Document
+public class RoomModel extends AbstractDateDocument implements Comparable<RoomModel> {
     private String hotelId;
     private String locationId;
     private String hotelName;

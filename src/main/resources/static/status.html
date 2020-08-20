@@ -107,14 +107,14 @@
 					$('#hotelData').append(tableString);
 				});
 				
-				$.getJSON('/rest/location/getAll', function(data) {
-					var tableString = '<h3>Location Models (' + data.length + ')</h3>\n';
+				$.getJSON('/rest/city/getAll', function(data) {
+					var tableString = '<h3>City Models (' + data.length + ')</h3>\n';
 					tableString += '<div class="table-wrapper">\n';
 					tableString += '<table>\n';
 					tableString += '<thead>\n';
 					tableString += '<tr>\n';
 					tableString += '<th>Id</th>\n';
-					tableString += '<th>Location</th>\n';
+					tableString += '<th>City</th>\n';
 					tableString += '<th>Email</th>\n';
 					tableString += '</tr>\n';
 					tableString += '</thead>\n';
@@ -123,7 +123,7 @@
 					$.each(data, function(i, model) {
 						tableString += '<tr>\n';
 						tableString += '<td>' + model.id + '</td>\n';
-						tableString += '<td>' + model.location + '</td>\n';
+						tableString += '<td>' + model.city + '</td>\n';
 						tableString += '<td>' + model.email + '</td>\n';
 						tableString += '</tr>\n';
 					});

@@ -4,17 +4,25 @@ import java.time.ZonedDateTime;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.kutsuki.matchaserver.model.AbstractModel;
+import org.kutsuki.matchaserver.model.AbstractDocument;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-public class HotelModel extends AbstractModel implements Comparable<HotelModel> {
-    private static final long serialVersionUID = 6057107340374642484L;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
-    private transient int retires;
-    private transient ZonedDateTime nextRuntime;
+@Document
+public class Hotel extends AbstractDocument implements Comparable<Hotel> {
+    @Transient
+    @JsonIgnore
+    private int retires;
+
+    @Transient
+    @JsonIgnore
+    private ZonedDateTime nextRuntime;
 
     private boolean active;
     private String link;
-    private String locationId;
+    private String cityId;
     private String latitude;
     private String longitude;
     private String name;
@@ -23,7 +31,7 @@ public class HotelModel extends AbstractModel implements Comparable<HotelModel> 
     private String cpt;
 
     @Override
-    public int compareTo(HotelModel rhs) {
+    public int compareTo(Hotel rhs) {
 	return getId().compareTo(rhs.getId());
     }
 
@@ -36,10 +44,10 @@ public class HotelModel extends AbstractModel implements Comparable<HotelModel> 
 	} else if (obj == this) {
 	    equals = true;
 	} else {
-	    HotelModel rhs = (HotelModel) obj;
+	    Hotel rhs = (Hotel) obj;
 	    EqualsBuilder eb = new EqualsBuilder();
 	    eb.append(getName(), rhs.getName());
-	    eb.append(getLocationId(), rhs.getLocationId());
+	    eb.append(getCityId(), rhs.getCityId());
 	    eb.append(getLink(), rhs.getLink());
 	    eb.append(getLatitude(), rhs.getLatitude());
 	    eb.append(getLongitude(), rhs.getLongitude());
@@ -60,7 +68,7 @@ public class HotelModel extends AbstractModel implements Comparable<HotelModel> 
     public int hashCode() {
 	HashCodeBuilder hcb = new HashCodeBuilder();
 	hcb.append(getName());
-	hcb.append(getLocationId());
+	hcb.append(getCityId());
 	hcb.append(getLink());
 	hcb.append(isActive());
 	hcb.append(getId());
@@ -90,12 +98,12 @@ public class HotelModel extends AbstractModel implements Comparable<HotelModel> 
 	this.link = link;
     }
 
-    public String getLocationId() {
-	return locationId;
+    public String getCityId() {
+	return cityId;
     }
 
-    public void setLocationId(String locationId) {
-	this.locationId = locationId;
+    public void setCityId(String cityId) {
+	this.cityId = cityId;
     }
 
     public String getCPT() {

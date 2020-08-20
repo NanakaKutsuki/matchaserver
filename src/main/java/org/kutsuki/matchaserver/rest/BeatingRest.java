@@ -3,6 +3,7 @@ package org.kutsuki.matchaserver.rest;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -11,24 +12,31 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import javax.annotation.PostConstruct;
+
 import org.apache.commons.lang3.StringUtils;
-import org.kutsuki.matchaserver.dao.DaoManager;
+import org.kutsuki.matchaserver.EmailManager;
+import org.kutsuki.matchaserver.model.beating.Beating;
 import org.kutsuki.matchaserver.model.beating.BeatingBiggest;
 import org.kutsuki.matchaserver.model.beating.BeatingCount;
 import org.kutsuki.matchaserver.model.beating.BeatingResult;
-import org.kutsuki.matchaserver.model.beating.EventModel;
+import org.kutsuki.matchaserver.repository.BeatingRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class BeatingsRest {
+public class BeatingRest {
     private static final BigDecimal FANCY = new BigDecimal(65);
     private static final BigDecimal HUNDRED = new BigDecimal(100);
 
+    @Autowired
+    private BeatingRepository repository;
+
     private BeatingBiggest biggest;
-    private List<EventModel> eventList;
+    private List<Beating> eventList;
     private List<String> loseList;
     private List<String> placeList;
     private List<String> playerList;
@@ -38,25 +46,29 @@ public class BeatingsRest {
     private int nextId;
 
     // constructor
-    public BeatingsRest() {
+    public BeatingRest() {
 	this.placeList = new ArrayList<String>();
 	this.playerList = new ArrayList<String>();
+    }
+
+    @PostConstruct
+    public void postConstruct() {
 	reloadCache(true);
     }
 
     @GetMapping("/rest/beating/addEvent")
-    public ResponseEntity<String> addEvent(@RequestParam("date") String date, @RequestParam("place") String place,
+    public ResponseEntity<String> addBeating(@RequestParam("date") String date, @RequestParam("place") String place,
 	    @RequestParam("loser") String loser, @RequestParam("total") String total,
 	    @RequestParam("playerMap") String playerMap) {
 	if (StringUtils.isNotBlank(date) && StringUtils.isNotBlank(place) && StringUtils.isNotBlank(loser)
 		&& StringUtils.isNotBlank(loser) && StringUtils.isNotBlank(total)
 		&& StringUtils.isNotBlank(playerMap)) {
 	    try {
-		EventModel event = new EventModel();
-		event.setId(Integer.toString(nextId));
-		event.setDate(date);
-		event.setPlace(place);
-		event.setLoser(loser);
+		Beating model = new Beating();
+		model.setId(Integer.toString(nextId));
+		model.setLocalDate(LocalDate.parse(date));
+		model.setPlace(place);
+		model.setLoser(loser);
 
 		int totalCards = 0;
 		Map<String, Integer> map = new HashMap<String, Integer>();
@@ -68,19 +80,19 @@ public class BeatingsRest {
 		    totalCards += cards;
 		    map.put(player, cards);
 		}
-		event.setPlayerMap(map);
+		model.setPlayerMap(map);
 
 		BigDecimal bd = new BigDecimal(total);
-		event.setTotal(bd);
+		model.setTotal(bd);
 
 		BigDecimal costPerPerson = bd.divide(BigDecimal.valueOf(totalCards), 2, RoundingMode.HALF_UP);
-		event.setFancy(costPerPerson.compareTo(FANCY) == 1);
+		model.setFancy(costPerPerson.compareTo(FANCY) == 1);
 
-		DaoManager.EVENT.index(event);
-		eventList.add(event);
+		repository.insert(model);
+		eventList.add(model);
 		reloadCache(false);
-	    } catch (NumberFormatException e) {
-		// do nothing
+	    } catch (DateTimeParseException | NumberFormatException e) {
+		EmailManager.emailException("Error Adding Beating", e);
 	    }
 	}
 
@@ -88,7 +100,7 @@ public class BeatingsRest {
     }
 
     @GetMapping("/rest/beating/getAll")
-    public List<EventModel> getAll() {
+    public List<Beating> getAll() {
 	return eventList;
     }
 
@@ -129,7 +141,7 @@ public class BeatingsRest {
 	this.winList = new ArrayList<String>();
 
 	// go through each event
-	for (EventModel event : eventList) {
+	for (Beating event : eventList) {
 	    if (dateFilter(event.getLocalDate(), startDate, endDate)) {
 		// get total cards played
 		BigDecimal totalCards = getTotalCards(event);
@@ -240,7 +252,7 @@ public class BeatingsRest {
     }
 
     // calcBiggestBeating
-    private void calcBiggest(EventModel event) {
+    private void calcBiggest(Beating event) {
 	if (event.getTotal().compareTo(biggest.getValue()) == 1) {
 	    this.biggest = new BeatingBiggest(event.getLoser(), event.getPlace(), event.getTotal());
 	}
@@ -397,7 +409,7 @@ public class BeatingsRest {
     }
 
     // getTotalCardsPlayed
-    private BigDecimal getTotalCards(EventModel event) {
+    private BigDecimal getTotalCards(Beating event) {
 	int cards = 0;
 	for (int i : event.getPlayerMap().values()) {
 	    cards += i;
@@ -409,7 +421,7 @@ public class BeatingsRest {
     // reloadCache
     private void reloadCache(boolean full) {
 	if (full) {
-	    this.eventList = DaoManager.EVENT.getAll();
+	    this.eventList = repository.findAll();
 	}
 
 	Collections.sort(eventList);
@@ -418,7 +430,7 @@ public class BeatingsRest {
 
 	this.placeList.clear();
 	this.playerList.clear();
-	for (EventModel model : eventList) {
+	for (Beating model : eventList) {
 	    if (!placeList.contains(model.getPlace())) {
 		placeList.add(model.getPlace());
 	    }

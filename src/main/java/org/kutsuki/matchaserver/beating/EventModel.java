@@ -6,10 +6,10 @@ import java.util.Map;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.kutsuki.matchaserver.model.AbstractModel;
+import org.kutsuki.matchaserver.model.AbstractDocument;
 
 //{"date":"2016-07-21","place":"Bon Chon","loser":"Chris Baird","total":50.25,"fancy":false,"playerMap":{"Jamie Duncan":1,"Paul Boudra":1,"Jay Owen":1,"Chris Baird":1}}
-public class EventModel extends AbstractModel implements Comparable<EventModel> {
+public class EventModel extends AbstractDocument implements Comparable<EventModel> {
     private static final long serialVersionUID = -1020629980972217669L;
 
     private transient LocalDate localDate;

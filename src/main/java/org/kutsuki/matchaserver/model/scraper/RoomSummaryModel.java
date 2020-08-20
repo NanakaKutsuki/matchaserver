@@ -2,11 +2,9 @@ package org.kutsuki.matchaserver.model.scraper;
 
 import java.math.BigDecimal;
 
-import org.kutsuki.matchaserver.model.AbstractDateTimeModel;
+import org.kutsuki.matchaserver.model.AbstractDateDocument;
 
-public class RoomSummaryModel extends AbstractDateTimeModel implements Comparable<RoomSummaryModel> {
-    private static final transient long serialVersionUID = -7055663053579028478L;
-
+public class RoomSummaryModel extends AbstractDateDocument implements Comparable<RoomSummaryModel> {
     private String hotelName;
     private BigDecimal startingRate;
     private BigDecimal endingRate;

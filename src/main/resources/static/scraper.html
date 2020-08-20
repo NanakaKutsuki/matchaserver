@@ -15,19 +15,19 @@
 				$('#startDate').append('<p>Starting: ').append(start.toLocaleDateString("en-US", dateOptions)).append('</p>');
 				$('#date').val(start.toISOString().split('T')[0]);
 				
-				$.getJSON('/rest/location/getAll', function(data) {
+				$.getJSON('/rest/city/getAll', function(data) {
 					var menuString = '<ul>';
 				
-					$.each(data, function(i, location) {
-						var l = new String(location.location);
+					$.each(data, function(i, city) {
+						var l = new String(city.city);
 						var city = l.substring(0, l.indexOf(','));
 						
-						if( location.id == lid ) {
+						if( city.id == lid ) {
 							$('#headerTitle').append(l);
 						}
 						
 						menuString += '<li><a href="scraper.html?lid=' 
-								+ location.id
+								+ city.id
 								+ '">'
 								+ city
 								+ '</a></li>';
