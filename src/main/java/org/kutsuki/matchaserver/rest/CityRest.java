@@ -16,8 +16,8 @@ public class CityRest {
 
     @GetMapping("/rest/city/getAll")
     public List<City> getAll() {
-	List<City> locationList = repository.findAll();
-	Collections.sort(locationList);
-	return locationList;
+	List<City> cityList = repository.findAll();
+	Collections.sort(cityList);
+	return cityList;
     }
 }

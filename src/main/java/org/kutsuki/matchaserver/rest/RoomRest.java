@@ -23,8 +23,8 @@ import org.kutsuki.matchaserver.MatchaTracker;
 import org.kutsuki.matchaserver.document.City;
 import org.kutsuki.matchaserver.document.Hotel;
 import org.kutsuki.matchaserver.document.Room;
-import org.kutsuki.matchaserver.model.RoomSummaryModel;
 import org.kutsuki.matchaserver.model.EventModel;
+import org.kutsuki.matchaserver.model.RoomSummaryModel;
 import org.kutsuki.matchaserver.repository.CityRepository;
 import org.kutsuki.matchaserver.repository.HotelRepository;
 import org.kutsuki.matchaserver.repository.RoomRepository;
@@ -40,7 +40,6 @@ public class RoomRest extends AbstractDateTimeRest {
     private static final BigDecimal ALERT = BigDecimal.TEN;
     private static final DateTimeFormatter MMMM_DD_YYYY = DateTimeFormatter.ofPattern("MMMM dd, YYYY EEEE");
     private static final NumberFormat CURRENCY = NumberFormat.getCurrencyInstance();
-    private static final NumberFormat PERCENT = NumberFormat.getPercentInstance();
     private static final String LSB_HTML = "%5B";
     private static final String RSB_HTML = "%5D";
     private static final String SOLD_OUT_TITLE = "SOLD OUT! ";

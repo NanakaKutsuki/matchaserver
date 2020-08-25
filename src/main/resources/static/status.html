@@ -27,11 +27,11 @@
 						tableString += '</thead>\n';
 						tableString += '<tbody>\n';
 
-						$.each(data, function(i, model) {
+						$.each(data, function(i, hotel) {
 							tableString += '<tr>\n';
-							tableString += '<td>' + model.id + '</td>\n';
-							tableString += '<td>' + model.name + '</td>\n';
-							tableString += '<td>' + model.retries + '</td>\n';
+							tableString += '<td>' + hotel.id + '</td>\n';
+							tableString += '<td>' + hotel.name + '</td>\n';
+							tableString += '<td>' + hotel.retries + '</td>\n';
 							tableString += '</tr>\n';
 						});
 						
@@ -60,11 +60,11 @@
 						tableString += '</thead>\n';
 						tableString += '<tbody>\n';
 
-						$.each(data, function(i, model) {
+						$.each(data, function(i, hotel) {
 							tableString += '<tr>\n';
-							tableString += '<td>' + model.id + '</td>\n';
-							tableString += '<td>' + model.name + '</td>\n';
-							tableString += '<td>' + model.retries + '</td>\n';
+							tableString += '<td>' + hotel.id + '</td>\n';
+							tableString += '<td>' + hotel.name + '</td>\n';
+							tableString += '<td>' + hotel.retries + '</td>\n';
 							tableString += '</tr>\n';
 						});
 						
@@ -79,7 +79,7 @@
 				});
 			
 				$.getJSON('/rest/hotel/getAll', function(data) {
-					var tableString = '<h3>Hotel Models (' + data.length + ')</h3>\n';
+					var tableString = '<h3>Hotel Documents (' + data.length + ')</h3>\n';
 					tableString += '<div class="table-wrapper">\n';
 					tableString += '<table>\n';
 					tableString += '<thead>\n';
@@ -92,12 +92,12 @@
 					tableString += '</thead>\n';
 					tableString += '<tbody>\n';
 
-					$.each(data, function(i, model) {
+					$.each(data, function(i, hotel) {
 						tableString += '<tr>\n';
-						tableString += '<td>' + model.id + '</td>\n';
-						tableString += '<td>' + model.name + '</td>\n';
-						tableString += '<td>' + model.locationId + '</td>\n';
-						tableString += '<td>' + model.active + '</td>\n';
+						tableString += '<td>' + hotel.id + '</td>\n';
+						tableString += '<td>' + hotel.name + '</td>\n';
+						tableString += '<td>' + hotel.cityId + '</td>\n';
+						tableString += '<td>' + hotel.active + '</td>\n';
 						tableString += '</tr>\n';
 					});
 					
@@ -108,7 +108,7 @@
 				});
 				
 				$.getJSON('/rest/city/getAll', function(data) {
-					var tableString = '<h3>City Models (' + data.length + ')</h3>\n';
+					var tableString = '<h3>City Documents (' + data.length + ')</h3>\n';
 					tableString += '<div class="table-wrapper">\n';
 					tableString += '<table>\n';
 					tableString += '<thead>\n';
@@ -120,18 +120,18 @@
 					tableString += '</thead>\n';
 					tableString += '<tbody>\n';
 
-					$.each(data, function(i, model) {
+					$.each(data, function(i, city) {
 						tableString += '<tr>\n';
-						tableString += '<td>' + model.id + '</td>\n';
-						tableString += '<td>' + model.city + '</td>\n';
-						tableString += '<td>' + model.email + '</td>\n';
+						tableString += '<td>' + city.id + '</td>\n';
+						tableString += '<td>' + city.city + '</td>\n';
+						tableString += '<td>' + city.email + '</td>\n';
 						tableString += '</tr>\n';
 					});
 					
 					tableString += '</tbody>\n';
 					tableString += '</table>\n';
 					tableString += '</div>\n';
-					$('#locationData').append(tableString);
+					$('#cityData').append(tableString);
 				});
 			});
 		</script>
@@ -153,8 +153,8 @@
 											<li><a href="#main" class="more scrolly">Next Refresh</a></li>
 											<li><a href="#running" class="more scrolly">Running</a></li>
 											<li><a href="#unfinished" class="more scrolly">Unfinished</a></li>
-											<li><a href="#hotelData" class="more scrolly">Hotel Models</a></li>
-											<li><a href="#locationData" class="more scrolly">Location Models</a></li>
+											<li><a href="#hotelData" class="more scrolly">Hotel Documents</a></li>
+											<li><a href="#cityData" class="more scrolly">City Documents</a></li>
 										</ul>
 									</div>
 								</li>
@@ -176,7 +176,7 @@
 								<hr />
 								<div id="hotelData"></div>
 								<hr />
-								<div id="locationData"></div>
+								<div id="cityData"></div>
 							</div>
 						</section>
 					</article>
