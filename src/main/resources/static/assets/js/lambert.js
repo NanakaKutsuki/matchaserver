@@ -37,11 +37,11 @@ function formatTime(input) {
 }
 
 function changeDate() {
-	var lid = getUrlVars()["lid"] != null ? getUrlVars()["lid"] : 1;
-	window.location.href = '/scraper.html?lid=' + lid + '&start=' + $('#date').val();
+	var cityId = getUrlVars()["cityId"] != null ? getUrlVars()["cityId"] : 1;
+	window.location.href = '/scraper.html?cityId=' + cityId + '&start=' + $('#date').val();
 }
 
 function changeDateDetail() {
-	var hid = getUrlVars()["hid"] != null ? getUrlVars()["hid"] : 8;
-	window.location.href = '/scraperDetail.html?hid=' + hid + '&start=' + $('#date').val();
+	var hotelId = getUrlVars()["hotelId"] != null ? getUrlVars()["hotelId"] : 8;
+	window.location.href = '/scraperDetail.html?hotelId=' + hotelId + '&start=' + $('#date').val();
 }

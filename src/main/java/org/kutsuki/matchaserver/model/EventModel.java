@@ -1,17 +1,17 @@
-package org.kutsuki.matchaserver.document;
+package org.kutsuki.matchaserver.model;
 
-public class ScraperModel {
-    private String hid;
+public class EventModel {
+    private String hotelId;
     private String date;
     private String name;
     private String rate;
 
-    public String getHid() {
-	return hid;
+    public String hotelId() {
+	return hotelId;
     }
 
-    public void setHid(String hid) {
-	this.hid = hid;
+    public void setHotelId(String hotelId) {
+	this.hotelId = hotelId;
     }
 
     public String getDate() {

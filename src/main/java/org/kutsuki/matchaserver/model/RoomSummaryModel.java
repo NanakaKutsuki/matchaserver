@@ -1,6 +1,9 @@
-package org.kutsuki.matchaserver.document;
+package org.kutsuki.matchaserver.model;
 
 import java.math.BigDecimal;
+
+import org.kutsuki.matchaserver.document.AbstractDateDocument;
+import org.kutsuki.matchaserver.document.Room;
 
 public class RoomSummaryModel extends AbstractDateDocument implements Comparable<RoomSummaryModel> {
     private String hotelName;
@@ -8,7 +11,7 @@ public class RoomSummaryModel extends AbstractDateDocument implements Comparable
     private BigDecimal endingRate;
     private boolean soldOut;
 
-    public RoomSummaryModel(RoomModel start, RoomModel end) {
+    public RoomSummaryModel(Room start, Room end) {
 	this.hotelName = start.getHotelName();
 	this.startingRate = start.getRate();
 	this.endingRate = end.getRate();

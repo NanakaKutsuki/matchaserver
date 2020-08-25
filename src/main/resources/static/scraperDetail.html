@@ -8,8 +8,8 @@
 		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
 		<script>
 			document.addEventListener('DOMContentLoaded', function() {
-				var lid = 1;
-				var hid = getUrlVars()["hid"] != null ? getUrlVars()["hid"] : 8;
+				var cityId = 1;
+				var hotelId = getUrlVars()["hotelId"] != null ? getUrlVars()["hotelId"] : 8;
 				var hotelName = '';
 				var start = getUrlVars()["start"] != null ? parseDate(getUrlVars()["start"]) : new Date();
 				var dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
@@ -18,9 +18,9 @@
 				$('#startDate').append(start.toLocaleDateString("en-US", dateOptions));
 				$('#date').val(start.toISOString().split('T')[0]);
 				
-				$.getJSON('/rest/hotel/getHotelById?hotelId=' + hid, function(data) {
+				$.getJSON('/rest/hotel/getHotelById?hotelId=' + hotelId, function(data) {
 					$('#hotelName').append(data.name);
-					lid = data.locationId;
+					cityId = data.cityId;
 				});
 				
 				$.getJSON('/rest/city/getAll', function(data) {
@@ -30,12 +30,12 @@
 						var l = new String(city.city);
 						var city = l.substring(0, l.indexOf(','));
 						
-						if( city.id == lid ) {
+						if( city.id == city ) {
 							$('#headerTitle').append(l);
 							$('#hotelLocation').append('<p>').append(l).append('</p>');
 						}
 						
-						menuString += '<li><a href="scraper.html?lid=' 
+						menuString += '<li><a href="scraper.html?cityId=' 
 								+ city.id
 								+ '">'
 								+ city
@@ -45,7 +45,7 @@
 					$('#menu').append(menuString);
 				});
 				
-				$.getJSON('/rest/room/getRoomDetail?hid=' + hid + '&start=' + start.toISOString().split('T')[0], function(data) {
+				$.getJSON('/rest/room/getRoomDetail?hotelId=' + hotelId + '&start=' + start.toISOString().split('T')[0], function(data) {
 					var tableString = '';
 				
 					if( data.length != 0 ) {

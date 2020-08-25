@@ -1,20 +1,15 @@
 package org.kutsuki.matchaserver.rest;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
-import org.apache.commons.lang3.StringUtils;
 import org.kutsuki.matchaserver.EmailManager;
+import org.kutsuki.matchaserver.MatchaTracker;
 import org.kutsuki.matchaserver.document.Hotel;
 import org.kutsuki.matchaserver.repository.HotelRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,28 +19,23 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class HotelRest {
-    private static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+public class HotelRest extends AbstractDateTimeRest {
+    private static final DateTimeFormatter YYYYMMDD = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final int MAX_RETRIES = 5;
     private static final String HEADER = "https://www.trivago.com/?";
-    private static final String ARRIVE = "aDateRange[arr]=";
+    public static final String ARRIVE = "aDateRange[arr]=";
     private static final String DEPART = "&aDateRange[dep]=";
     private static final String RANGE = "&aPriceRange[from]=0&aPriceRange[to]=0";
     private static final String PATH_ID = "&iPathId=";
     private static final String LAT = "&aGeoCode[lat]=";
     private static final String LON = "&aGeoCode[lng]=";
-    private static final String GEO_DISTANCE_ITEM = "&iGeoDistanceItem=";
+    public static final String GEO_DISTANCE_ITEM = "&iGeoDistanceItem=";
     private static final String CPT = "&aCategoryRange=0,1,2,3,4,5&aOverallLiking=1,2,3,4,5&sOrderBy=relevance%20desc&bTopDealsOnly=false&iRoomType=7&cpt=";
     private static final String FOOTER = "&iIncludeAll=0&iViewType=0&bIsSeoPage=false&bIsSitemap=false&";
-    private static final String LSB_HTML = "%5B";
-    private static final String RSB_HTML = "%5D";
-    private static final ZoneId MST = ZoneId.of("America/Denver");
 
     private boolean restart;
     private List<String> hotelList;
-    private Map<String, Hotel> unfinishedMap;
     private ZonedDateTime lastCompleted;
-    private ZonedDateTime lastRuntime;
     private ZonedDateTime nextRefresh;
 
     @Autowired
@@ -70,48 +60,19 @@ public class HotelRest {
 	return hotel;
     }
 
-    // getByLink
-    public Hotel getHotelByLink(String href) {
-	Hotel hotel = null;
-
-	String link = StringUtils.replace(href, LSB_HTML, Character.toString('['));
-	link = StringUtils.replace(link, RSB_HTML, Character.toString(']'));
-
-	String trivagoId = StringUtils.substringBetween(link, GEO_DISTANCE_ITEM, Character.toString('&'));
-	String date = StringUtils.substringBetween(link, ARRIVE, Character.toString('&'));
-
-	if (StringUtils.isNotBlank(trivagoId) && StringUtils.isNotBlank(date)) {
-	    hotel = repository.findByTrivagoId(trivagoId);
-	    if (hotel != null) {
-		try {
-		    ZonedDateTime zdt = ZonedDateTime.of(LocalDate.parse(date, DTF), LocalTime.MIN, MST);
-		    hotel.setNextRuntime(zdt);
-		} catch (DateTimeParseException e) {
-		    EmailManager.emailException("Exception thrown while parsing: " + date, e);
-		}
-	    }
-	}
-
-	if (hotel == null) {
-	    EmailManager.emailHome("Unable to Find Hotel!", link);
-	}
-
-	return hotel;
-    }
-
     @GetMapping("/rest/hotel/getNextHotel")
     public String getNextHotel() {
 	Hotel nextHotel = null;
 	ZonedDateTime now = now();
 
 	if (now.isAfter(nextRefresh) && now.getHour() >= 9 && now.getHour() <= 22) {
-	    if (!unfinishedMap.isEmpty()) {
+	    if (!MatchaTracker.UNFINISHED_MAP.isEmpty()) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Check Scraper!!!");
 		sb.append(System.lineSeparator());
 		sb.append(System.lineSeparator());
 
-		for (Hotel hotel : unfinishedMap.values()) {
+		for (Hotel hotel : MatchaTracker.UNFINISHED_MAP.values()) {
 		    sb.append(hotel.getName());
 		    sb.append(' ');
 		    sb.append(hotel.getId()).append(System.lineSeparator());
@@ -121,9 +82,9 @@ public class HotelRest {
 	    }
 
 	    hotelList.clear();
-	    unfinishedMap.clear();
+	    MatchaTracker.UNFINISHED_MAP.clear();
 
-	    for (Hotel hotel : repository.findAllByActive(true)) {
+	    for (Hotel hotel : repository.findAllByActiveTrue()) {
 		if (now.getHour() == 22) {
 		    hotel.setNextRuntime(now.plusDays(1));
 		} else {
@@ -133,7 +94,7 @@ public class HotelRest {
 		hotel.setRetries(0);
 
 		hotelList.add(hotel.getId());
-		unfinishedMap.put(hotel.getId(), hotel);
+		MatchaTracker.UNFINISHED_MAP.put(hotel.getId(), hotel);
 	    }
 
 	    Collections.shuffle(hotelList);
@@ -142,7 +103,7 @@ public class HotelRest {
 	}
 
 	if (hotelList.isEmpty() && now().isAfter(lastCompleted.plusMinutes(1))) {
-	    for (Hotel hotel : unfinishedMap.values()) {
+	    for (Hotel hotel : MatchaTracker.UNFINISHED_MAP.values()) {
 		if (hotel.getRetries() < MAX_RETRIES) {
 		    hotel.setRetries(hotel.getRetries() + 1);
 		    hotelList.add(hotel.getId());
@@ -153,10 +114,10 @@ public class HotelRest {
 	}
 
 	if (!hotelList.isEmpty()) {
-	    nextHotel = unfinishedMap.get(hotelList.remove(0));
+	    nextHotel = MatchaTracker.UNFINISHED_MAP.get(hotelList.remove(0));
 	}
 
-	lastRuntime = now;
+	MatchaTracker.LAST_RUNTIME = now;
 	return getLink(nextHotel);
     }
 
@@ -170,7 +131,7 @@ public class HotelRest {
 	List<Hotel> statusList = new ArrayList<Hotel>();
 
 	for (String id : hotelList) {
-	    Hotel hotel = unfinishedMap.get(id);
+	    Hotel hotel = MatchaTracker.UNFINISHED_MAP.get(id);
 	    statusList.add(hotel);
 	}
 
@@ -179,7 +140,7 @@ public class HotelRest {
 
     @GetMapping("/rest/hotel/getUnfinished")
     public List<Hotel> getUnfinished() {
-	return new ArrayList<Hotel>(unfinishedMap.values());
+	return new ArrayList<Hotel>(MatchaTracker.UNFINISHED_MAP.values());
     }
 
     @GetMapping("/rest/hotel/getLink")
@@ -197,8 +158,8 @@ public class HotelRest {
     public Boolean isRestart() {
 	boolean result = restart;
 
-	if (now().toLocalTime().isAfter(lastRuntime.toLocalTime().plusMinutes(3))) {
-	    Iterator<Hotel> itr = unfinishedMap.values().iterator();
+	if (now().toLocalTime().isAfter(MatchaTracker.LAST_RUNTIME.toLocalTime().plusMinutes(3))) {
+	    Iterator<Hotel> itr = MatchaTracker.UNFINISHED_MAP.values().iterator();
 	    while (!restart && itr.hasNext()) {
 		if (itr.next().getRetries() < MAX_RETRIES) {
 		    restart = true;
@@ -223,7 +184,7 @@ public class HotelRest {
 
 	    if (!hotelList.contains(hotel.getId())) {
 		hotelList.add(hotel.getId());
-		unfinishedMap.put(hotel.getId(), hotel);
+		MatchaTracker.UNFINISHED_MAP.put(hotel.getId(), hotel);
 	    }
 
 	    Collections.shuffle(hotelList);
@@ -235,13 +196,13 @@ public class HotelRest {
 
     @GetMapping("/rest/hotel/reloadHotels")
     public ResponseEntity<String> reloadHotels(@RequestParam(value = "cityId", required = true) String cityId) {
-	for (Hotel hotel : repository.findAllByCityIdAndActive(cityId, true)) {
+	for (Hotel hotel : repository.findAllByCityIdAndActiveTrue(cityId)) {
 	    hotel.setNextRuntime(now());
 	    hotel.setRetries(0);
 
 	    if (!hotelList.contains(hotel.getId())) {
 		hotelList.add(hotel.getId());
-		unfinishedMap.put(hotel.getId(), hotel);
+		MatchaTracker.UNFINISHED_MAP.put(hotel.getId(), hotel);
 	    }
 	}
 
@@ -268,9 +229,9 @@ public class HotelRest {
 
 	    sb.append(HEADER);
 	    sb.append(ARRIVE);
-	    sb.append(DTF.format(hotel.getNextRuntime()));
+	    sb.append(YYYYMMDD.format(hotel.getNextRuntime()));
 	    sb.append(DEPART);
-	    sb.append(DTF.format(hotel.getNextRuntime().plusDays(1)));
+	    sb.append(YYYYMMDD.format(hotel.getNextRuntime().plusDays(1)));
 	    sb.append(RANGE);
 
 	    if (hotel.getPathId() != null) {
@@ -298,11 +259,6 @@ public class HotelRest {
 	}
 
 	return link;
-    }
-
-    // now
-    private ZonedDateTime now() {
-	return ZonedDateTime.now(MST);
     }
 
     // setNextRefresh

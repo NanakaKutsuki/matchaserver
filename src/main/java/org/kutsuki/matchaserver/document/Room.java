@@ -5,15 +5,15 @@ import java.math.BigDecimal;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document
-public class RoomModel extends AbstractDateDocument implements Comparable<RoomModel> {
+public class Room extends AbstractDateDocument implements Comparable<Room> {
     private String hotelId;
-    private String locationId;
+    private String cityId;
     private String hotelName;
-    private String locationName;
+    private String cityName;
     private BigDecimal rate;
     private boolean soldOut;
 
-    public int compareTo(RoomModel rhs) {
+    public int compareTo(Room rhs) {
 	int result = getYYYYMMDD().compareTo(rhs.getYYYYMMDD());
 
 	// if equal, use the hotel name
@@ -41,12 +41,12 @@ public class RoomModel extends AbstractDateDocument implements Comparable<RoomMo
 	this.hotelName = hotelName;
     }
 
-    public String getLocationName() {
-	return locationName;
+    public String getCityName() {
+	return cityName;
     }
 
-    public void setLocationName(String locationName) {
-	this.locationName = locationName;
+    public void setCityName(String cityName) {
+	this.cityName = cityName;
     }
 
     public String getHotelId() {
@@ -57,12 +57,12 @@ public class RoomModel extends AbstractDateDocument implements Comparable<RoomMo
 	this.hotelId = hotelId;
     }
 
-    public String getLocationId() {
-	return locationId;
+    public String getCityId() {
+	return cityId;
     }
 
-    public void setLocationId(String locationId) {
-	this.locationId = locationId;
+    public void setCityId(String cityId) {
+	this.cityId = cityId;
     }
 
     public BigDecimal getRate() {

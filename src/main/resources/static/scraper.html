@@ -8,7 +8,7 @@
 		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
 		<script>
 			document.addEventListener('DOMContentLoaded', function() {
-				var lid = getUrlVars()["lid"] != null ? getUrlVars()["lid"] : 1;
+				var cityId = getUrlVars()["cityId"] != null ? getUrlVars()["cityId"] : 1;
 				var start = getUrlVars()["start"] != null ? parseDate(getUrlVars()["start"]) : new Date();
 				var dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
 				
@@ -19,14 +19,14 @@
 					var menuString = '<ul>';
 				
 					$.each(data, function(i, city) {
-						var l = new String(city.city);
-						var city = l.substring(0, l.indexOf(','));
+						var c = new String(city.city);
+						var city = c.substring(0, c.indexOf(','));
 						
-						if( city.id == lid ) {
-							$('#headerTitle').append(l);
+						if( city.id == cityId ) {
+							$('#headerTitle').append(c);
 						}
 						
-						menuString += '<li><a href="scraper.html?lid=' 
+						menuString += '<li><a href="scraper.html?cityId=' 
 								+ city.id
 								+ '">'
 								+ city
@@ -36,7 +36,7 @@
 					$('#menu').append(menuString);
 				});
 				
-				$.getJSON('/rest/room/getRooms?lid=' + lid + '&start=' + start.toISOString().split('T')[0], function(data) {
+				$.getJSON('/rest/room/getRooms?cityId=' + cityId + '&start=' + start.toISOString().split('T')[0], function(data) {
 					var eventDate = '';
 					var tableString = '';
 					var days = 0;
@@ -66,7 +66,7 @@
 							}
 								
 							tableString += '<tr>\n';
-							tableString += '<td><a href="scraperDetail.html?hid=' + event.hid + '&start=' + event.date + '">' + event.name + '</a></td>\n';
+							tableString += '<td><a href="scraperDetail.html?hotelId=' + event.hotelId + '&start=' + event.date + '">' + event.name + '</a></td>\n';
 							tableString += '<td>' + event.rate + '</td>\n';
 							tableString += '</tr>\n';
 

@@ -1,4 +1,4 @@
-package org.kutsuki.matchaserver.leaderboard;
+package org.kutsuki.matchaserver;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Random;
 
 import org.apache.commons.lang3.StringUtils;
-import org.kutsuki.matchaserver.EmailManager;
+import org.kutsuki.matchaserver.model.LeaderboardModel;
 
 public class LeaderboardParser {
     private static final String LEADERBOARDS = " Leaderboards";
