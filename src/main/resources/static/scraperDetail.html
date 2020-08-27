@@ -14,7 +14,6 @@
 				var start = getUrlVars()["start"] != null ? parseDate(getUrlVars()["start"]) : new Date();
 				var dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
 				
-				
 				$('#startDate').append(start.toLocaleDateString("en-US", dateOptions));
 				$('#date').val(start.toISOString().split('T')[0]);
 				
@@ -61,9 +60,12 @@
 						tableString += '</thead>\n';
 						tableString += '<tbody>\n';
 					
-						$.each(data, function(i, event) {								
+						$.each(data, function(i, event) {
+						var m = moment.utc(event.date);
+						m.tz('America/Denver');
+													
 							tableString += '<tr>\n';
-							tableString += '<td>' + formatTime(event.dateTime) + '</td>\n';
+							tableString += '<td>' + m.seconds(0).format('hh:ssa') + '</td>\n';
 							
 							if( event.rate > 0 ) {
 								tableString += '<td>$' + event.rate + '</td>\n';
@@ -146,6 +148,8 @@
 			<script src="assets/js/jquery.min.js"></script>
 			<script src="assets/js/jquery.scrollex.min.js"></script>
 			<script src="assets/js/jquery.scrolly.min.js"></script>
+			<script src="assets/js/moment.min.js"></script>
+			<script src="assets/js/moment-timezone-with-data.min.js"></script>
 			<script src="assets/js/browser.min.js"></script>
 			<script src="assets/js/breakpoints.min.js"></script>
 			<script src="assets/js/util.js"></script>

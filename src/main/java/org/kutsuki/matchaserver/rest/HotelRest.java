@@ -41,6 +41,13 @@ public class HotelRest extends AbstractDateTimeRest {
     @Autowired
     private HotelRepository repository;
 
+    public HotelRest() {
+	this.hotelList = new ArrayList<String>();
+	this.lastCompleted = now();
+	this.restart = false;
+	setNextRefresh();
+    }
+
     @GetMapping("/rest/hotel/getAll")
     public List<Hotel> getAll() {
 	List<Hotel> hotelList = repository.findAll();

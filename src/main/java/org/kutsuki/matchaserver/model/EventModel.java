@@ -6,7 +6,7 @@ public class EventModel {
     private String name;
     private String rate;
 
-    public String hotelId() {
+    public String getHotelId() {
 	return hotelId;
     }
 

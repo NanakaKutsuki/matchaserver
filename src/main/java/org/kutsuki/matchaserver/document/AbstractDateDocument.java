@@ -51,6 +51,10 @@ public abstract class AbstractDateDocument extends AbstractDocument {
     }
 
     public void setDate(Date date) {
+	if (zonedDateTime == null) {
+	    zonedDateTime = ZonedDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
+	}
+
 	this.date = date;
     }
 }

@@ -20,7 +20,7 @@
 				
 					$.each(data, function(i, city) {
 						var c = new String(city.city);
-						var city = c.substring(0, c.indexOf(','));
+						var name = c.substring(0, c.indexOf(','));
 						
 						if( city.id == cityId ) {
 							$('#headerTitle').append(c);
@@ -29,7 +29,7 @@
 						menuString += '<li><a href="scraper.html?cityId=' 
 								+ city.id
 								+ '">'
-								+ city
+								+ name
 								+ '</a></li>';
 					});
 					menuString += '</ul>';

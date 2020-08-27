@@ -3,9 +3,11 @@ package org.kutsuki.matchaserver.rest;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,7 +68,7 @@ public class BeatingRest {
 	    try {
 		Beating beating = new Beating();
 		beating.setId(Integer.toString(nextId));
-		beating.setLocalDate(LocalDate.parse(date));
+		beating.setDate(Date.from(LocalDate.parse(date).atStartOfDay(ZoneId.systemDefault()).toInstant()));
 		beating.setPlace(place);
 		beating.setLoser(loser);
 
@@ -142,7 +144,7 @@ public class BeatingRest {
 
 	// go through each event
 	for (Beating beating : beatingList) {
-	    if (dateFilter(beating.getLocalDate(), startDate, endDate)) {
+	    if (dateFilter(beating.getZonedDateTime().toLocalDate(), startDate, endDate)) {
 		// get total cards played
 		BigDecimal totalCards = getTotalCards(beating);
 
@@ -172,8 +174,10 @@ public class BeatingRest {
 
 		    // subtract value from loser
 		    mayorMap.get(beating.getPlace()).put(beating.getLoser(),
-			    getMapBD(mayorMap.get(beating.getPlace()), beating.getLoser()).subtract(beating.getTotal()));
-		    valueMap.put(beating.getLoser(), getMapBD(valueMap, beating.getLoser()).subtract(beating.getTotal()));
+			    getMapBD(mayorMap.get(beating.getPlace()), beating.getLoser())
+				    .subtract(beating.getTotal()));
+		    valueMap.put(beating.getLoser(),
+			    getMapBD(valueMap, beating.getLoser()).subtract(beating.getTotal()));
 
 		    // add loss
 		    lossesMap.put(beating.getLoser(), getMapInt(lossesMap, beating.getLoser()) + 1);

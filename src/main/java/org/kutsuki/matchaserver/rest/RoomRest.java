@@ -114,8 +114,7 @@ public class RoomRest extends AbstractDateTimeRest {
     }
 
     @GetMapping("/rest/room/getRoomDetail")
-    public List<Room> getRoomsOverTime(@RequestParam("hotelId") String hotelId,
-	    @RequestParam("start") String startDate) {
+    public List<Room> getRoomsDetail(@RequestParam("hotelId") String hotelId, @RequestParam("start") String startDate) {
 	Date start = toDate(toZonedDateTime(startDate, LocalTime.MIN));
 	Date end = toDate(toZonedDateTime(startDate, LocalTime.MAX));
 
@@ -154,7 +153,7 @@ public class RoomRest extends AbstractDateTimeRest {
 		// set date time
 		if (hotel.getNextRuntime().isAfter(now())) {
 		    // set to midnight
-		    room.setZonedDateTime(startOfDay(hotel.getNextRuntime().withHour(0)));
+		    room.setZonedDateTime(startOfDay(hotel.getNextRuntime().withHour(0).withSecond(1)));
 		} else {
 		    room.setZonedDateTime(now().withMinute(0).withSecond(0).withNano(0));
 

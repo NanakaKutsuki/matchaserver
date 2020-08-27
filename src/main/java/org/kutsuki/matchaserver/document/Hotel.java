@@ -31,7 +31,7 @@ public class Hotel extends AbstractDocument implements Comparable<Hotel> {
 
     @Override
     public int compareTo(Hotel rhs) {
-	return getId().compareTo(rhs.getId());
+	return getName().compareTo(rhs.getName());
     }
 
     @Override
