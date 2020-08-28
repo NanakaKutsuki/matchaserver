@@ -10,6 +10,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @SpringBootApplication
 public class MatchaServerApplication {
@@ -18,6 +20,9 @@ public class MatchaServerApplication {
 
     @Value("${server.port}")
     private int redirectPort;
+
+    @Value("${allowed.origins}")
+    private String allowedOrigins;
 
     public static void main(String[] args) {
 	SpringApplication.run(MatchaServerApplication.class, args);
@@ -39,6 +44,16 @@ public class MatchaServerApplication {
 
 	tomcat.addAdditionalTomcatConnectors(redirectConnector());
 	return tomcat;
+    }
+
+    @Bean
+    public WebMvcConfigurer corsConfigurer() {
+	return new WebMvcConfigurer() {
+	    @Override
+	    public void addCorsMappings(CorsRegistry registry) {
+		registry.addMapping("/**").allowedOrigins(allowedOrigins).allowedMethods("GET");
+	    }
+	};
     }
 
     private Connector redirectConnector() {

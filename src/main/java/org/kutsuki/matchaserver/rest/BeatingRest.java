@@ -25,10 +25,12 @@ import org.kutsuki.matchaserver.document.Beating;
 import org.kutsuki.matchaserver.repository.BeatingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@CrossOrigin
 @RestController
 public class BeatingRest {
     private static final BigDecimal FANCY = new BigDecimal(65);
@@ -222,16 +224,19 @@ public class BeatingRest {
 	return result;
     }
 
+    @CrossOrigin(origins = "https://beatings.sentinel-corp.com")
     @GetMapping("/rest/beating/getPlaces")
     public List<String> getPlaces() {
 	return placeList;
     }
 
+    @CrossOrigin(origins = "https://beatings.sentinel-corp.com")
     @GetMapping("/rest/beating/getPlayers")
     public List<String> getPlayers() {
 	return playerList;
     }
 
+    @CrossOrigin(origins = "https://beatings.sentinel-corp.com")
     @GetMapping("/rest/beating/reloadCache")
     public ResponseEntity<String> reloadCache() {
 	reloadCache(true);
