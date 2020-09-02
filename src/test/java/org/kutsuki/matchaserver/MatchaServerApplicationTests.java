@@ -15,4 +15,10 @@ public class MatchaServerApplicationTests {
     public void contextLoads() {
 	Assertions.assertTrue(repository.count() > 0, "Should be stuff in the database");
     }
+
+    // @Test
+    public void sendLeaderboards() {
+	LeaderboardParser parser = new LeaderboardParser();
+	Assertions.assertTrue(parser.send(), "Failed to send Leaderboards!");
+    }
 }

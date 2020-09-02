@@ -72,7 +72,8 @@ public class LeaderboardParser {
 	}
     }
 
-    public void send() {
+    public boolean send() {
+	boolean result = false;
 	File file = new File("C:/Invoices - TimeOffCsv.csv");
 	List<LeaderboardModel> modelList = new ArrayList<LeaderboardModel>();
 
@@ -159,9 +160,13 @@ public class LeaderboardParser {
 		    EmailManager.emailHome(model.getEmail(), sb.toString());
 		}
 	    }
+
+	    result = true;
 	} catch (IOException e) {
 	    EmailManager.emailException("Error while reading from File!", e);
 	}
+
+	return result;
     }
 
     private LeaderboardModel parseLine(String line, boolean average) throws DateTimeParseException {
@@ -201,10 +206,5 @@ public class LeaderboardParser {
 	    return i + suffixes[i % 10];
 
 	}
-    }
-
-    public static void main(String[] args) {
-	LeaderboardParser rest = new LeaderboardParser();
-	rest.send();
     }
 }
