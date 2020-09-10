@@ -178,6 +178,7 @@ public class HotelRest extends AbstractDateTimeRest {
 	    this.restart = false;
 	}
 
+	MatchaTracker.LAST_CHROME_REPORT = ZonedDateTime.now();
 	return result;
     }
 
