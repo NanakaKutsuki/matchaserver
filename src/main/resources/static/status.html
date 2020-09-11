@@ -8,10 +8,6 @@
 		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
 		<script>
 			document.addEventListener('DOMContentLoaded', function() {
-				$.get('/rest/hotel/getNextRefresh', function(data) {	
-					$('#nextRefresh').append('<p>Next Refresh: ' + data + '</p>');
-				});
-
 				$.getJSON('/rest/hotel/getStatus', function(data) {				
 					var tableString = '<h3>Running (' + data.length + ')</h3>\n';
 
@@ -166,7 +162,6 @@
 					<article id="main">
 						<header>
 							<h2>Scraper Status</h2>
-							<div id="nextRefresh"></div>
 						</header>
 						<section class="wrapper style5">
 							<div class="inner">

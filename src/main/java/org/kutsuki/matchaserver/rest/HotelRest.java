@@ -14,6 +14,7 @@ import org.kutsuki.matchaserver.document.Hotel;
 import org.kutsuki.matchaserver.repository.HotelRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -36,7 +37,6 @@ public class HotelRest extends AbstractDateTimeRest {
     private boolean restart;
     private List<String> hotelList;
     private ZonedDateTime lastCompleted;
-    private ZonedDateTime nextRefresh;
 
     @Autowired
     private HotelRepository repository;
@@ -45,7 +45,6 @@ public class HotelRest extends AbstractDateTimeRest {
 	this.hotelList = new ArrayList<String>();
 	this.lastCompleted = now();
 	this.restart = false;
-	setNextRefresh();
     }
 
     @GetMapping("/rest/hotel/getAll")
@@ -72,43 +71,6 @@ public class HotelRest extends AbstractDateTimeRest {
 	Hotel nextHotel = null;
 	ZonedDateTime now = now();
 
-	if (now.isAfter(nextRefresh) && now.getHour() >= 9 && now.getHour() <= 22) {
-	    if (!MatchaTracker.UNFINISHED_MAP.isEmpty()) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("Check Scraper!!!");
-		sb.append(System.lineSeparator());
-		sb.append(System.lineSeparator());
-
-		for (Hotel hotel : MatchaTracker.UNFINISHED_MAP.values()) {
-		    sb.append(hotel.getName());
-		    sb.append(' ');
-		    sb.append(hotel.getId()).append(System.lineSeparator());
-		}
-
-		EmailManager.emailHome(now() + " Unfinished Hotels!", sb.toString());
-	    }
-
-	    hotelList.clear();
-	    MatchaTracker.UNFINISHED_MAP.clear();
-
-	    for (Hotel hotel : repository.findAllByActiveTrue()) {
-		if (now.getHour() == 22) {
-		    hotel.setNextRuntime(now.plusDays(1));
-		} else {
-		    hotel.setNextRuntime(now);
-		}
-
-		hotel.setRetries(0);
-
-		hotelList.add(hotel.getId());
-		MatchaTracker.UNFINISHED_MAP.put(hotel.getId(), hotel);
-	    }
-
-	    Collections.shuffle(hotelList);
-	    setNextRefresh();
-	    lastCompleted = now();
-	}
-
 	if (hotelList.isEmpty() && now().isAfter(lastCompleted.plusMinutes(1))) {
 	    for (Hotel hotel : MatchaTracker.UNFINISHED_MAP.values()) {
 		if (hotel.getRetries() < MAX_RETRIES) {
@@ -117,7 +79,7 @@ public class HotelRest extends AbstractDateTimeRest {
 		}
 	    }
 
-	    lastCompleted = now();
+	    lastCompleted = now;
 	}
 
 	if (!hotelList.isEmpty()) {
@@ -126,11 +88,6 @@ public class HotelRest extends AbstractDateTimeRest {
 
 	MatchaTracker.LAST_RUNTIME = now;
 	return getLink(nextHotel);
-    }
-
-    @GetMapping("/rest/hotel/getNextRefresh")
-    public String getNextRefresh() {
-	return nextRefresh.toString();
     }
 
     @GetMapping("/rest/hotel/getStatus")
@@ -159,6 +116,14 @@ public class HotelRest extends AbstractDateTimeRest {
 	}
 
 	return getLink(hotel);
+    }
+
+    @GetMapping("/rest/hotel/heartbeat")
+    public ResponseEntity<String> heartbeat() {
+	MatchaTracker.LAST_CHROME_REPORT = ZonedDateTime.now();
+
+	// return finished
+	return ResponseEntity.ok().build();
     }
 
     @GetMapping("/rest/hotel/isRestart")
@@ -228,6 +193,56 @@ public class HotelRest extends AbstractDateTimeRest {
 	return ResponseEntity.ok().build();
     }
 
+    @Scheduled(cron = "0 0 11-23,0 * * *")
+    public void refreshHotels() {
+	ZonedDateTime now = now();
+
+	if (!MatchaTracker.UNFINISHED_MAP.isEmpty()) {
+	    StringBuilder sb = new StringBuilder();
+	    sb.append("Check Scraper!!!");
+	    sb.append(System.lineSeparator());
+	    sb.append(System.lineSeparator());
+
+	    for (Hotel hotel : MatchaTracker.UNFINISHED_MAP.values()) {
+		sb.append(hotel.getName());
+		sb.append(' ');
+		sb.append(hotel.getId()).append(System.lineSeparator());
+	    }
+
+	    EmailManager.emailHome(now() + " Unfinished Hotels!", sb.toString());
+	}
+
+	hotelList.clear();
+	MatchaTracker.UNFINISHED_MAP.clear();
+
+	for (Hotel hotel : repository.findAllByActiveTrue()) {
+	    if (now.getHour() == 22) {
+		hotel.setNextRuntime(now.plusDays(1));
+	    } else {
+		hotel.setNextRuntime(now);
+	    }
+
+	    hotel.setRetries(0);
+
+	    hotelList.add(hotel.getId());
+	    MatchaTracker.UNFINISHED_MAP.put(hotel.getId(), hotel);
+	}
+
+	Collections.shuffle(hotelList);
+	lastCompleted = now;
+    }
+
+    @Scheduled(cron = "0 0 11-23,0 * * *")
+    public void checkLastRuntime() {
+	if (now().isAfter(MatchaTracker.LAST_RUNTIME.plusHours(1).plusMinutes(30))) {
+	    EmailManager.emailHome("Check Scraper Box", "Last Runtime: " + MatchaTracker.LAST_RUNTIME);
+	}
+
+	if (now().isAfter(MatchaTracker.LAST_CHROME_REPORT.plusMinutes(5))) {
+	    EmailManager.emailHome("Check Chrome Restarter", "Last Report: " + MatchaTracker.LAST_CHROME_REPORT);
+	}
+    }
+
     // getLink
     private String getLink(Hotel hotel) {
 	String link = null;
@@ -267,10 +282,5 @@ public class HotelRest extends AbstractDateTimeRest {
 	}
 
 	return link;
-    }
-
-    // setNextRefresh
-    private void setNextRefresh() {
-	this.nextRefresh = now().plusHours(1).withMinute(0).withSecond(0).withNano(0);
     }
 }

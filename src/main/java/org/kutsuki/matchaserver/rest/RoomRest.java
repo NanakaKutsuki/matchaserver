@@ -258,20 +258,6 @@ public class RoomRest extends AbstractDateTimeRest {
 	}
     }
 
-    @Scheduled(cron = "0 */10 * * * *")
-    public void checkChromeRestarter() {
-	if (now().isAfter(MatchaTracker.LAST_CHROME_REPORT.plusMinutes(9))) {
-	    EmailManager.emailHome("Check Chrome Restarter", "Last Report: " + MatchaTracker.LAST_CHROME_REPORT);
-	}
-    }
-
-    @Scheduled(cron = "0 0 11-21 * * *")
-    public void checkLastRuntime() {
-	if (now().isAfter(MatchaTracker.LAST_RUNTIME.plusHours(1).plusMinutes(30))) {
-	    EmailManager.emailHome("Check Scraper Box", "Last Runtime: " + MatchaTracker.LAST_RUNTIME);
-	}
-    }
-
     @Scheduled(cron = "0 0 1 * * *")
     public void eveningReport() {
 	// EST
