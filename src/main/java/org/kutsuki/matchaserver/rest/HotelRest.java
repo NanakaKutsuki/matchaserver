@@ -120,7 +120,7 @@ public class HotelRest extends AbstractDateTimeRest {
 
     @GetMapping("/rest/hotel/heartbeat")
     public ResponseEntity<String> heartbeat() {
-	MatchaTracker.LAST_CHROME_REPORT = ZonedDateTime.now();
+	MatchaTracker.LAST_CHROME_REPORT = now();
 
 	// return finished
 	return ResponseEntity.ok().build();
@@ -143,7 +143,7 @@ public class HotelRest extends AbstractDateTimeRest {
 	    this.restart = false;
 	}
 
-	MatchaTracker.LAST_CHROME_REPORT = ZonedDateTime.now();
+	MatchaTracker.LAST_CHROME_REPORT = now();
 	return result;
     }
 
