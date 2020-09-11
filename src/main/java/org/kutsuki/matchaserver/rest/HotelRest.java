@@ -193,7 +193,7 @@ public class HotelRest extends AbstractDateTimeRest {
 	return ResponseEntity.ok().build();
     }
 
-    @Scheduled(cron = "0 0 11-23,0 * * *")
+    @Scheduled(cron = "0 0 0,11-23 * * *")
     public void refreshHotels() {
 	ZonedDateTime now = now();
 
@@ -232,13 +232,13 @@ public class HotelRest extends AbstractDateTimeRest {
 	lastCompleted = now;
     }
 
-    @Scheduled(cron = "0 0 11-23,0 * * *")
+    @Scheduled(cron = "0 0 0,11-23 * * *")
     public void checkLastRuntime() {
-	if (now().isAfter(MatchaTracker.LAST_RUNTIME.plusHours(1).plusMinutes(30))) {
+	if (now().isAfter(MatchaTracker.LAST_RUNTIME.plusHours(1))) {
 	    EmailManager.emailHome("Check Scraper Box", "Last Runtime: " + MatchaTracker.LAST_RUNTIME);
 	}
 
-	if (now().isAfter(MatchaTracker.LAST_CHROME_REPORT.plusMinutes(5))) {
+	if (now().isAfter(MatchaTracker.LAST_CHROME_REPORT.plusHours(1))) {
 	    EmailManager.emailHome("Check Chrome Restarter", "Last Report: " + MatchaTracker.LAST_CHROME_REPORT);
 	}
     }
