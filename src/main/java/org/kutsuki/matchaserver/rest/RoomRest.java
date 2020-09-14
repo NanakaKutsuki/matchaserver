@@ -264,43 +264,45 @@ public class RoomRest extends AbstractDateTimeRest {
 	LocalDate now = LocalDate.now();
 
 	for (City city : cityRepository.findAll()) {
-	    StringBuilder subject = new StringBuilder();
-	    subject.append("Tomorrow in ");
-	    subject.append(city.getCity());
-	    subject.append(StringUtils.SPACE);
-	    subject.append('(');
-	    subject.append(now.getMonthValue());
-	    subject.append('/');
-	    subject.append(now.getDayOfMonth());
-	    subject.append(')');
-
 	    ZonedDateTime startDateTime = startOfDay(now()).plusDays(1);
-	    Date start = toDate(startOfDay(now()).plusDays(1));
-	    Date end = toDate(now().plusDays(1).withHour(23));
+	    Date start = toDate(startDateTime);
+	    Date end = toDate(startDateTime.withHour(23));
 
 	    List<Room> roomList = roomRepository.findAllByCityIdAndDateBetween(city.getId(), start, end);
 	    roomList = filterMostRecent(roomList);
 
-	    StringBuilder sb = new StringBuilder();
-	    sb.append("Rates for Tomorrow: " + MMMM_DD_YYYY.format(startDateTime));
-	    sb.append(System.lineSeparator());
+	    if (!roomList.isEmpty()) {
+		StringBuilder subject = new StringBuilder();
+		subject.append("Tomorrow in ");
+		subject.append(city.getCity());
+		subject.append(StringUtils.SPACE);
+		subject.append('(');
+		subject.append(now.getMonthValue());
+		subject.append('/');
+		subject.append(now.getDayOfMonth());
+		subject.append(')');
 
-	    for (Room room : roomList) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Rates for Tomorrow: " + MMMM_DD_YYYY.format(startDateTime));
 		sb.append(System.lineSeparator());
-		sb.append(CURRENCY.format(room.getRate()));
 
-		if (room.isSoldOut()) {
-		    sb.append(' ');
-		    sb.append(SOLD_OUT_TITLE);
-		} else {
-		    sb.append(':');
-		    sb.append(' ');
+		for (Room room : roomList) {
+		    sb.append(System.lineSeparator());
+		    sb.append(CURRENCY.format(room.getRate()));
+
+		    if (room.isSoldOut()) {
+			sb.append(' ');
+			sb.append(SOLD_OUT_TITLE);
+		    } else {
+			sb.append(':');
+			sb.append(' ');
+		    }
+
+		    sb.append(room.getHotelName());
 		}
 
-		sb.append(room.getHotelName());
+		EmailManager.email(city.getEmail(), subject.toString(), sb.toString());
 	    }
-
-	    EmailManager.email(city.getEmail(), subject.toString(), sb.toString());
 	}
     }
 
