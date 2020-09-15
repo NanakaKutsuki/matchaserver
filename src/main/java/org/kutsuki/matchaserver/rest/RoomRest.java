@@ -153,7 +153,7 @@ public class RoomRest extends AbstractDateTimeRest {
 		// set date time
 		if (hotel.getNextRuntime().isAfter(now())) {
 		    // set to midnight
-		    room.setZonedDateTime(startOfDay(hotel.getNextRuntime().withHour(0).withSecond(1)));
+		    room.setZonedDateTime(startOfDay(hotel.getNextRuntime()).withSecond(1));
 		} else {
 		    room.setZonedDateTime(now().withMinute(0).withSecond(0).withNano(0));
 
@@ -222,17 +222,15 @@ public class RoomRest extends AbstractDateTimeRest {
 	    }
 
 	    StringBuilder sb = new StringBuilder();
-	    sb.append("Rates from Last Year:");
-	    sb.append(System.lineSeparator());
-	    sb.append(System.lineSeparator());
+	    sb.append("Rates from Last Year:\n\n");
 
 	    String lastYYYYMMDD = "";
 	    Collections.sort(summaryList);
 	    for (RoomSummaryModel model : summaryList) {
 		if (!model.getYYYYMMDD().equals(lastYYYYMMDD)) {
-		    sb.append(System.lineSeparator());
+		    sb.append('\n');
 		    sb.append(MMMM_DD_YYYY.format(model.getZonedDateTime()));
-		    sb.append(System.lineSeparator());
+		    sb.append('\n');
 		    lastYYYYMMDD = model.getYYYYMMDD();
 		}
 
@@ -251,7 +249,7 @@ public class RoomRest extends AbstractDateTimeRest {
 		}
 
 		sb.append(model.getHotelName());
-		sb.append(System.lineSeparator());
+		sb.append('\n');
 	    }
 
 	    EmailManager.email(city.getEmail(), subject, sb.toString());
@@ -284,10 +282,11 @@ public class RoomRest extends AbstractDateTimeRest {
 
 		StringBuilder sb = new StringBuilder();
 		sb.append("Rates for Tomorrow: " + MMMM_DD_YYYY.format(startDateTime));
-		sb.append(System.lineSeparator());
+		sb.append('\n');
 
+		Collections.sort(roomList);
 		for (Room room : roomList) {
-		    sb.append(System.lineSeparator());
+		    sb.append('\n');
 		    sb.append(CURRENCY.format(room.getRate()));
 
 		    if (room.isSoldOut()) {
@@ -302,6 +301,9 @@ public class RoomRest extends AbstractDateTimeRest {
 		}
 
 		EmailManager.email(city.getEmail(), subject.toString(), sb.toString());
+
+		// TODO remove test
+		EmailManager.emailHome(subject.toString(), sb.toString());
 	    }
 	}
     }
@@ -312,10 +314,10 @@ public class RoomRest extends AbstractDateTimeRest {
 		+ CURRENCY.format(room.getRate());
 
 	StringBuilder sb = new StringBuilder();
-	sb.append(room.getHotelName()).append(System.lineSeparator());
-	sb.append(room.getCityName()).append(System.lineSeparator());
-	sb.append("Checking in ").append(MMMM_DD_YYYY.format(room.getZonedDateTime())).append(System.lineSeparator());
-	sb.append("Previous Rate: ").append(CURRENCY.format(prev)).append(System.lineSeparator());
+	sb.append(room.getHotelName()).append('\n');
+	sb.append(room.getCityName()).append('\n');
+	sb.append("Checking in ").append(MMMM_DD_YYYY.format(room.getZonedDateTime())).append('\n');
+	sb.append("Previous Rate: ").append(CURRENCY.format(prev)).append('\n');
 	sb.append("Current Rate: ").append(CURRENCY.format(room.getRate()));
 	sb.append("Generated: ").append(now());
 
@@ -327,11 +329,11 @@ public class RoomRest extends AbstractDateTimeRest {
 	String subject = "Rate Alert: " + room.getHotelName() + " in " + room.getCityName() + " is SOLD OUT!";
 
 	StringBuilder sb = new StringBuilder();
-	sb.append(room.getHotelName()).append(System.lineSeparator());
-	sb.append(room.getCityName()).append(System.lineSeparator());
-	sb.append("Checking in ").append(MMMM_DD_YYYY.format(room.getZonedDateTime())).append(System.lineSeparator());
+	sb.append(room.getHotelName()).append('\n');
+	sb.append(room.getCityName()).append('\n');
+	sb.append("Checking in ").append(MMMM_DD_YYYY.format(room.getZonedDateTime())).append('\n');
 	if (room.getRate().compareTo(BigDecimal.ZERO) > 0) {
-	    sb.append("Previous Rate: ").append(CURRENCY.format(room.getRate())).append(System.lineSeparator());
+	    sb.append("Previous Rate: ").append(CURRENCY.format(room.getRate())).append('\n');
 	}
 	sb.append("Generated: ").append(now());
 	sb.append("SOLD OUT!!!");
@@ -344,11 +346,11 @@ public class RoomRest extends AbstractDateTimeRest {
 	String subject = "Rate Alert: " + room.getHotelName() + " in " + room.getCityName() + " has ADDED INVENTORY!";
 
 	StringBuilder sb = new StringBuilder();
-	sb.append(room.getHotelName()).append(System.lineSeparator());
-	sb.append(room.getCityName()).append(System.lineSeparator());
-	sb.append("Checking in ").append(MMMM_DD_YYYY.format(room.getZonedDateTime())).append(System.lineSeparator());
+	sb.append(room.getHotelName()).append('\n');
+	sb.append(room.getCityName()).append('\n');
+	sb.append("Checking in ").append(MMMM_DD_YYYY.format(room.getZonedDateTime())).append('\n');
 	if (room.getRate().compareTo(BigDecimal.ZERO) > 0) {
-	    sb.append("Previous Rate: ").append(CURRENCY.format(prev)).append(System.lineSeparator());
+	    sb.append("Previous Rate: ").append(CURRENCY.format(prev)).append('\n');
 	}
 	sb.append("Current Rate: ").append(CURRENCY.format(room.getRate()));
 	sb.append("Generated: ").append(now());

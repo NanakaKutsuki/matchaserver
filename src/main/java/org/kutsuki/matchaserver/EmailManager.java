@@ -124,17 +124,17 @@ public class EmailManager {
     public static boolean emailException(String message, Throwable e) {
 	StringBuilder sb = new StringBuilder();
 	sb.append(message);
-	sb.append(System.lineSeparator());
-	sb.append(System.lineSeparator());
+	sb.append('\n');
+	sb.append('\n');
 	sb.append(e.getClass().getName());
 	sb.append(':').append(StringUtils.SPACE);
 	sb.append(e.getMessage());
-	sb.append(System.lineSeparator());
+	sb.append('\n');
 
 	for (StackTraceElement element : e.getStackTrace()) {
 	    sb.append('\t');
 	    sb.append(element.toString());
-	    sb.append(System.lineSeparator());
+	    sb.append('\n');
 	}
 
 	return emailHome(EXCEPTION_SUBJECT, sb.toString());
