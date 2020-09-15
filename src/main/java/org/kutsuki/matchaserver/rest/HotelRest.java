@@ -190,7 +190,9 @@ public class HotelRest extends AbstractDateTimeRest {
 
 	if (!MatchaTracker.UNFINISHED_MAP.isEmpty()) {
 	    StringBuilder sb = new StringBuilder();
-	    sb.append("Check Scraper!!!\n\n");
+	    sb.append("Check Scraper!!!");
+	    sb.append(EmailManager.NEW_LINE);
+	    sb.append(EmailManager.NEW_LINE);
 
 	    for (Hotel hotel : MatchaTracker.UNFINISHED_MAP.values()) {
 		sb.append(hotel.getName());
@@ -198,7 +200,7 @@ public class HotelRest extends AbstractDateTimeRest {
 		sb.append(hotel.getId());
 		sb.append(' ');
 		sb.append(hotel.getNextRuntime());
-		sb.append('\n');
+		sb.append(EmailManager.NEW_LINE);
 	    }
 
 	    EmailManager.emailHome(now() + " Unfinished Hotels!", sb.toString());

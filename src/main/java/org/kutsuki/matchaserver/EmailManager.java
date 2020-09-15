@@ -33,6 +33,7 @@ public class EmailManager {
     private static final String MAIL_SMTP_HOST = "mail.smtp.host";
     private static final String MAIL_SMTP_PORT = "mail.smtp.port";
     private static final String MAIL_SMTP_STARTTLS_ENABLE = "mail.smtp.starttls.enable";
+    public static final String NEW_LINE = "<br/>";
     private static final String PORT = "587";
     private static final String SIGNATURE = "<br/><br/>--<br/>Sentinel";
     private static final String SMTP = "smtp.ionos.com";
@@ -97,7 +98,10 @@ public class EmailManager {
 	    MimeBodyPart mbp1 = new MimeBodyPart();
 	    StringBuilder sb = new StringBuilder();
 	    sb.append(body);
-	    sb.append(SIGNATURE);
+
+	    if (userName.equals(fromSentinel)) {
+		sb.append(SIGNATURE);
+	    }
 
 	    mbp1.setContent(sb.toString(), TEXT_HTML);
 
@@ -124,17 +128,16 @@ public class EmailManager {
     public static boolean emailException(String message, Throwable e) {
 	StringBuilder sb = new StringBuilder();
 	sb.append(message);
-	sb.append('\n');
-	sb.append('\n');
+	sb.append(NEW_LINE);
+	sb.append(NEW_LINE);
 	sb.append(e.getClass().getName());
 	sb.append(':').append(StringUtils.SPACE);
 	sb.append(e.getMessage());
-	sb.append('\n');
+	sb.append(NEW_LINE);
 
 	for (StackTraceElement element : e.getStackTrace()) {
-	    sb.append('\t');
 	    sb.append(element.toString());
-	    sb.append('\n');
+	    sb.append(NEW_LINE);
 	}
 
 	return emailHome(EXCEPTION_SUBJECT, sb.toString());
