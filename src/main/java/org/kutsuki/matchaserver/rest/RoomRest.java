@@ -303,9 +303,6 @@ public class RoomRest extends AbstractDateTimeRest {
 		}
 
 		EmailManager.email(city.getEmail(), subject.toString(), sb.toString());
-
-		// TODO remove test
-		EmailManager.emailHome(subject.toString(), sb.toString());
 	    }
 	}
     }
