@@ -12,6 +12,4 @@ public interface RoomRepository extends MongoRepository<Room, String> {
     public List<Room> findAllByCityIdAndSoldOutAndDateBetween(String cityId, boolean soldOut, Date start, Date end);
 
     public List<Room> findAllByHotelIdAndDateBetween(String hotelId, Date start, Date end);
-
-    public List<Room> findAllByHotelIdAndCityIdAndDateBetween(String hotelId, String cityId, Date start, Date end);
 }

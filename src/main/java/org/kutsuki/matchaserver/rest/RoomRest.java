@@ -39,6 +39,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class RoomRest extends AbstractDateTimeRest {
     private static final BigDecimal ALERT = BigDecimal.TEN;
     private static final DateTimeFormatter MMMM_DD_YYYY = DateTimeFormatter.ofPattern("MMMM dd, YYYY EEEE");
+    private static final Map<String, Room> LATEST_ROOM_MAP = new HashMap<String, Room>();
     private static final NumberFormat CURRENCY = NumberFormat.getCurrencyInstance();
     private static final String LSB_HTML = "%5B";
     private static final String RSB_HTML = "%5D";
@@ -52,6 +53,30 @@ public class RoomRest extends AbstractDateTimeRest {
 
     @Autowired
     private RoomRepository roomRepository;
+
+    @Scheduled(initialDelay = 1000 * 30, fixedDelay = Long.MAX_VALUE)
+    public void populateLatestRoomsMap() {
+	Date start = toDate(startOfDay(now()));
+	Date end = toDate(now());
+
+	for (Hotel hotel : hotelRepository.findAllByActiveTrue()) {
+	    TreeMap<ZonedDateTime, Room> roomMap = new TreeMap<ZonedDateTime, Room>();
+	    List<Room> roomList = roomRepository.findAllByHotelIdAndDateBetween(hotel.getId(), start, end);
+
+	    for (Room room : roomList) {
+		if (!roomMap.containsKey(room.getZonedDateTime())) {
+		    roomMap.put(room.getZonedDateTime(), room);
+		} else {
+		    // remove duplicate
+		    roomRepository.delete(room);
+		}
+	    }
+
+	    if (!roomMap.isEmpty()) {
+		LATEST_ROOM_MAP.put(hotel.getId(), roomMap.lastEntry().getValue());
+	    }
+	}
+    }
 
     @GetMapping("/rest/room/getRooms")
     public List<EventModel> getRooms(@RequestParam("cityId") String cityId, @RequestParam("start") String startDate) {
@@ -157,7 +182,7 @@ public class RoomRest extends AbstractDateTimeRest {
 		} else {
 		    room.setZonedDateTime(now().withMinute(0).withSecond(0).withNano(0));
 
-		    Room prev = getLatestRoom(hotel);
+		    Room prev = LATEST_ROOM_MAP.get(hotel.getId());
 		    if (prev != null) {
 			if (room.isSoldOut()) {
 			    // currently full
@@ -185,10 +210,13 @@ public class RoomRest extends AbstractDateTimeRest {
 
 		// index room
 		roomRepository.save(room);
+		LATEST_ROOM_MAP.put(hotel.getId(), room);
 		MatchaTracker.UNFINISHED_MAP.remove(hotel.getId());
 		MatchaTracker.LAST_RUNTIME = now();
 	    }
-	} catch (NumberFormatException e) {
+	} catch (
+
+	NumberFormatException e) {
 	    String error = "Error parsing price: " + rate + " for: " + hotel.getName() + " at " + hotel.getLink();
 	    EmailManager.emailException(error, e);
 	}
@@ -421,33 +449,6 @@ public class RoomRest extends AbstractDateTimeRest {
 
 	Collections.sort(roomList);
 	return roomList;
-    }
-
-    // getLatestRoom
-    private Room getLatestRoom(Hotel hotel) {
-	// midnight MST
-	Date start = toDate(startOfDay(now()));
-	Date end = toDate(now());
-
-	List<Room> roomList = roomRepository.findAllByHotelIdAndCityIdAndDateBetween(hotel.getId(), hotel.getCityId(),
-		start, end);
-
-	TreeMap<ZonedDateTime, Room> roomMap = new TreeMap<ZonedDateTime, Room>();
-	for (Room room : roomList) {
-	    if (!roomMap.containsKey(room.getZonedDateTime())) {
-		roomMap.put(room.getZonedDateTime(), room);
-	    } else {
-		// remove duplicate
-		roomRepository.delete(room);
-	    }
-	}
-
-	Room latest = null;
-	if (!roomMap.isEmpty()) {
-	    latest = roomMap.lastEntry().getValue();
-	}
-
-	return latest;
     }
 
     // filterMostRecent
