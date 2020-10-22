@@ -35,20 +35,17 @@ public class EmailManager {
     private static final String MAIL_SMTP_STARTTLS_ENABLE = "mail.smtp.starttls.enable";
     public static final String NEW_LINE = "<br/>";
     private static final String PORT = "587";
-    private static final String SIGNATURE = "<br/><br/>--<br/>Sentinel";
     private static final String SMTP = "smtp.ionos.com";
     private static final String TEXT_HTML = "text/html";
 
     private static String fromMatcha;
-    private static String fromSentinel;
     private static String password;
     private static String toHome;
 
     @Autowired
     private EmailManager(@Value("${email.home}") String home, @Value("${email.matcha}") String matcha,
-	    @Value("${email.sentinel}") String sentinel, @Value("${email.password}") String password) {
+	    @Value("${email.password}") String password) {
 	EmailManager.fromMatcha = matcha;
-	EmailManager.fromSentinel = sentinel;
 	EmailManager.password = password;
 	EmailManager.toHome = home;
     }
@@ -66,11 +63,6 @@ public class EmailManager {
     // email Home
     public static boolean emailHome(String subject, String body) {
 	return email(fromMatcha, toHome, subject, body, null);
-    }
-
-    // email Sentinel
-    public static boolean emailSentinel(String to, String subject, String body) {
-	return email(fromSentinel, to, subject, body, null);
     }
 
     // email
@@ -98,10 +90,6 @@ public class EmailManager {
 	    MimeBodyPart mbp1 = new MimeBodyPart();
 	    StringBuilder sb = new StringBuilder();
 	    sb.append(body);
-
-	    if (userName.equals(fromSentinel)) {
-		sb.append(SIGNATURE);
-	    }
 
 	    mbp1.setContent(sb.toString(), TEXT_HTML);
 
