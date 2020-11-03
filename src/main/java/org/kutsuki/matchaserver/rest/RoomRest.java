@@ -188,9 +188,7 @@ public class RoomRest extends AbstractDateTimeRest {
 		MatchaTracker.UNFINISHED_MAP.remove(hotel.getId());
 		MatchaTracker.LAST_RUNTIME = now();
 	    }
-	} catch (
-
-	NumberFormatException e) {
+	} catch (NumberFormatException e) {
 	    String error = "Error parsing price: " + rate + " for: " + hotel.getName() + " at " + hotel.getLink();
 	    EmailManager.emailException(error, e);
 	}
