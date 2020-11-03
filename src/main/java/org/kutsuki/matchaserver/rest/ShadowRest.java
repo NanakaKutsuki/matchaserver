@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class ShadowRest {
+    private static final String SHADOW_TRADER = "Shadow Trader";
+
     @Value("${email.shadow}")
     private String emailShadow;
 
@@ -21,10 +23,13 @@ public class ShadowRest {
     public ResponseEntity<String> uploadText(@RequestParam("text") String text) {
 	try {
 	    String body = URLDecoder.decode(text, StandardCharsets.UTF_8.name());
-	    String subject = StringUtils.substringBefore(body, StringUtils.SPACE);
-	    EmailManager.email(emailShadow, subject, body);
+	    String subject = SHADOW_TRADER;
 
-	    EmailManager.emailHome(subject, body);
+	    if (StringUtils.startsWith(body, Character.toString('#'))) {
+		subject = StringUtils.substringBefore(body, StringUtils.SPACE);
+	    }
+
+	    EmailManager.email(emailShadow, subject, body);
 	} catch (UnsupportedEncodingException e) {
 	    EmailManager.emailException(text, e);
 	}
