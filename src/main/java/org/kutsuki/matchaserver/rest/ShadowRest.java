@@ -97,8 +97,7 @@ public class ShadowRest {
 		subject.append(LocalTime.now().format(TIME_FORMATTER));
 	    }
 
-	    // EmailManager.email(emailShadow, subject, body + order.toString());
-	    EmailManager.emailHome(subject.toString(), body.toString());
+	    EmailManager.email(emailShadow, subject.toString(), body.toString());
 	} catch (UnsupportedEncodingException e) {
 	    EmailManager.emailException(text, e);
 	}
@@ -113,19 +112,13 @@ public class ShadowRest {
 	if (StringUtils.contains(body, OptionType.CALL.name()) || StringUtils.contains(body, OptionType.PUT.name())) {
 	    try {
 		for (String split : StringUtils.split(body, '&')) {
-		    boolean buy = false;
-
 		    if (StringUtils.contains(split, BOT)) {
-			buy = true;
 			split = StringUtils.substringAfter(split, BOT);
 		    } else if (StringUtils.contains(split, BUY)) {
-			buy = true;
 			split = StringUtils.substringAfter(split, BUY);
 		    } else if (StringUtils.contains(split, SELL)) {
-			buy = false;
 			split = StringUtils.substringAfter(split, SELL);
 		    } else if (StringUtils.contains(split, SOLD)) {
-			buy = false;
 			split = StringUtils.substringAfter(split, SOLD);
 		    }
 
