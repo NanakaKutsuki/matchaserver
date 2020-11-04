@@ -1,6 +1,6 @@
 package org.kutsuki.matchaserver.rest;
 
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -38,14 +38,14 @@ public class HotelRest extends AbstractDateTimeRest {
     private boolean restart;
     private boolean sent;
     private List<String> hotelList;
-    private LocalTime heartbeat;
+    private LocalDateTime heartbeat;
     private ZonedDateTime lastCompleted;
 
     @Autowired
     private HotelRepository repository;
 
     public HotelRest() {
-	this.heartbeat = LocalTime.now();
+	this.heartbeat = LocalDateTime.now();
 	this.hotelList = new ArrayList<String>();
 	this.lastCompleted = now();
 	this.restart = false;
@@ -140,7 +140,7 @@ public class HotelRest extends AbstractDateTimeRest {
 	    this.restart = false;
 	}
 
-	heartbeat = LocalTime.now();
+	heartbeat = LocalDateTime.now();
 	sent = false;
 	return result;
     }
@@ -241,7 +241,7 @@ public class HotelRest extends AbstractDateTimeRest {
 
     @Scheduled(cron = "0 * * * * *")
     public void checkScraper() {
-	if (!sent && LocalTime.now().isAfter(heartbeat.plusMinutes(5))) {
+	if (!sent && LocalDateTime.now().isAfter(heartbeat.plusMinutes(5))) {
 	    EmailManager.emailHome("Check Scraper Box", "Last Heartbeat: " + heartbeat);
 	    sent = true;
 	}

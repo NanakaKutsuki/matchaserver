@@ -13,7 +13,10 @@ public class MatchaServerApplicationTests {
 
     @Test
     public void contextLoads() {
-	String txt2 = "#468 SOLD -2 1/2 BACKRATIO SPX 100 (Weeklys) 2 NOV 20 3230/3210 PUT @.10cr  Adding two more here (now it's directional, not just for credit).  If margin is an issue, bwb or pass.";
+//	String text = "#414 SOLD -2 GLD 100 (Weeklys) 30 OCT 20 187 CALL @.36";
+//	ShadowRest rest = new ShadowRest();
+//	rest.uploadText(text);
+
 	Assertions.assertTrue(repository.count() > 0, "Should be stuff in the database");
     }
 }
