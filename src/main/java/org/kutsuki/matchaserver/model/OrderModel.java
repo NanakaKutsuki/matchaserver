@@ -9,6 +9,9 @@ import org.kutsuki.matchaserver.EmailManager;
 import org.kutsuki.matchaserver.document.Position;
 
 public class OrderModel {
+    private static final String BOLD = "<b>";
+    private static final String BOLD_CLOSE = "</b>";
+
     private BigDecimal price;
     private List<Position> positionList;
     private String priceString;
@@ -24,16 +27,17 @@ public class OrderModel {
     @Override
     public String toString() {
 	StringBuilder sb = new StringBuilder();
-
+	sb.append(BOLD);
 	sb.append(getSymbol());
 	sb.append(StringUtils.SPACE);
 	sb.append(getSpread());
 	sb.append(StringUtils.SPACE);
 	sb.append(priceString);
+	sb.append(BOLD_CLOSE);
 	sb.append(EmailManager.NEW_LINE);
 
 	for (Position position : positionList) {
-	    sb.append(position);
+	    sb.append(position.getOrder());
 
 	    if (StringUtils.equals(spread, OptionType.CALL.toString())
 		    || StringUtils.equals(spread, OptionType.PUT.toString())) {

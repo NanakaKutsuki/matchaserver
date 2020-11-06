@@ -10,6 +10,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -33,7 +34,6 @@ public class PortfolioRest {
     private static final DateTimeFormatter FORMATTER = new DateTimeFormatterBuilder().parseCaseInsensitive()
 	    .appendPattern("d MMM yy").toFormatter(Locale.ENGLISH);
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("h:mma");
-
     private static final String BACKRATIO = "BACKRATIO";
     private static final String BOT = "BOT ";
     private static final String BUY = "BUY ";
@@ -50,6 +50,8 @@ public class PortfolioRest {
     private static final String SOLD = "SOLD ";
     private static final String ST_WEEKLY = "ST Weekly";
     private static final String WEEKLYS = "(Weeklys)";
+    private static final String WORKING = "WORKING";
+    private static final String WORKING_EXPLAINATION = " - This trade has not been filled!";
     private static final String VERTICAL = "VERTICAL";
     private static final String UNBALANCED_BUTTERFLY = "~BUTTERFLY";
 
@@ -59,35 +61,51 @@ public class PortfolioRest {
     @Value("${email.portfolio}")
     private String emailPortfolio;
 
+    private List<Position> deleteList;
+    private List<Position> saveList;
+
+    public PortfolioRest() {
+	this.deleteList = new ArrayList<Position>();
+	this.saveList = new ArrayList<Position>();
+    }
+
     @GetMapping("/rest/portfolio/uploadAlert")
     public ResponseEntity<String> uploadAlert(@RequestParam("alert") String alert) {
 	try {
 	    StringBuilder subject = new StringBuilder();
 	    StringBuilder body = new StringBuilder();
+	    deleteList.clear();
+	    saveList.clear();
 
 	    String escaped = URLDecoder.decode(alert, StandardCharsets.UTF_8.toString());
 	    body.append(escaped);
 
 	    if (StringUtils.startsWith(body, Character.toString('#'))) {
+		boolean working = false;
 		subject.append(StringUtils.substringBefore(escaped, StringUtils.SPACE));
+		body.append(EmailManager.NEW_LINE);
+		body.append(EmailManager.NEW_LINE);
 
 		if (StringUtils.containsIgnoreCase(escaped, NEW)) {
 		    subject.append(StringUtils.SPACE);
 		    subject.append(NEW);
 		}
 
-		boolean first = true;
-		body.append(EmailManager.NEW_LINE);
-		body.append(EmailManager.NEW_LINE);
+		if (StringUtils.containsIgnoreCase(escaped, WORKING)) {
+		    subject.append(StringUtils.SPACE);
+		    subject.append(WORKING);
+		    working = true;
+		}
 
-		for (OrderModel order : createOrder(escaped)) {
+		boolean first = true;
+
+		List<OrderModel> orderList = createOrder(escaped);
+		String portfolio = getPortfolio(orderList, working);
+		for (OrderModel order : orderList) {
 		    if (!first) {
 			subject.append(StringUtils.SPACE);
 			subject.append('&');
-
-			for (int i = 0; i < 50; i++) {
-			    body.append('-');
-			}
+			body.append("--------------------------------------------------");
 			body.append(EmailManager.NEW_LINE);
 		    }
 
@@ -96,9 +114,22 @@ public class PortfolioRest {
 		    subject.append(StringUtils.SPACE);
 		    subject.append(order.getSpread());
 
+		    if (working) {
+			body.append(WORKING);
+			body.append(StringUtils.SPACE);
+			body.append(WORKING);
+			body.append(StringUtils.SPACE);
+			body.append(WORKING);
+			body.append(StringUtils.SPACE);
+			body.append(WORKING_EXPLAINATION);
+			body.append(EmailManager.NEW_LINE);
+			body.append(EmailManager.NEW_LINE);
+		    }
+
 		    body.append(order);
 		    first = false;
 		}
+		body.append(portfolio);
 
 		subject.append(StringUtils.SPACE);
 		subject.append(LocalTime.now().format(TIME_FORMATTER));
@@ -106,9 +137,11 @@ public class PortfolioRest {
 		subject.append(ST_WEEKLY);
 		subject.append(StringUtils.SPACE);
 		subject.append(LocalTime.now().format(TIME_FORMATTER));
+		body.append(getPortfolio(Collections.emptyList(), false));
 	    }
 
 	    EmailManager.email(emailPortfolio, subject.toString(), body.toString());
+	    resolveRepo();
 	} catch (UnsupportedEncodingException e) {
 	    EmailManager.emailException(alert, e);
 	}
@@ -161,12 +194,12 @@ public class PortfolioRest {
 	return orderList;
     }
 
-    private String getPortfolio(List<OrderModel> orderList) {
+    private String getPortfolio(List<OrderModel> orderList, boolean working) {
 	LocalDate now = LocalDate.now();
 	Map<String, Position> portfolioMap = new HashMap<String, Position>();
 	for (Position position : repository.findAll()) {
 	    if (now.isAfter(position.getExpiry())) {
-		repository.delete(position);
+		deleteList.add(position);
 	    }
 
 	    portfolioMap.put(position.getFullSymbol(), position);
@@ -181,22 +214,60 @@ public class PortfolioRest {
 		    if (position.getQuantity() == 0) {
 			if (orderEntry.getQuantity() > 0) {
 			    orderEntry.setSide(BUY_TO_CLOSE);
+			} else {
+			    orderEntry.setSide(SELL_TO_CLOSE);
 			}
 
-			portfolioMap.remove(position.getFullSymbol());
-			repository.delete(position);
+			if (!working) {
+			    portfolioMap.remove(position.getFullSymbol());
+			    deleteList.add(position);
+			}
 		    } else {
-			portfolioMap.put(position.getFullSymbol(), position);
-			repository.save(position);
+			if (orderEntry.getQuantity() > 0) {
+			    orderEntry.setSide(BUY_TO_OPEN);
+			} else {
+			    orderEntry.setSide(SELL_TO_OPEN);
+			}
+
+			if (!working) {
+			    portfolioMap.put(position.getFullSymbol(), position);
+			    saveList.add(position);
+			}
 		    }
 		} else {
-		    portfolioMap.put(orderEntry.getFullSymbol(), orderEntry);
-		    repository.save(orderEntry);
+		    if (orderEntry.getQuantity() > 0) {
+			orderEntry.setSide(BUY_TO_OPEN);
+		    } else {
+			orderEntry.setSide(SELL_TO_OPEN);
+		    }
+
+		    if (!working) {
+			portfolioMap.put(orderEntry.getFullSymbol(), orderEntry);
+			saveList.add(orderEntry);
+		    }
 		}
 	    }
 	}
 
-	return null;
+	StringBuilder sb = new StringBuilder();
+	sb.append(EmailManager.NEW_LINE);
+	sb.append(EmailManager.NEW_LINE);
+	sb.append("<b>[PORTFOLIO]</b>");
+
+	List<Position> portfolio = new ArrayList<Position>(portfolioMap.values());
+	Collections.sort(portfolio);
+	String symbol = StringUtils.EMPTY;
+	for (Position position : portfolio) {
+	    if (!symbol.equals(position.getSymbol())) {
+		symbol = position.getSymbol();
+		sb.append(EmailManager.NEW_LINE);
+	    }
+
+	    sb.append(position.getStatement());
+	    sb.append(EmailManager.NEW_LINE);
+	}
+
+	return sb.toString();
     }
 
     private OrderModel backratio(String[] split) throws Exception {
@@ -433,7 +504,7 @@ public class PortfolioRest {
 
 	for (String slash : StringUtils.split(slashes, '/')) {
 	    try {
-		slashList.add(new BigDecimal(slash).setScale(2));
+		slashList.add(new BigDecimal(slash));
 	    } catch (NumberFormatException e) {
 		throw new Exception("Error parsing slashes: " + slashes, e);
 	    }
@@ -469,5 +540,10 @@ public class PortfolioRest {
 	}
 
 	return slashList;
+    }
+
+    private void resolveRepo() {
+	repository.deleteAll(deleteList);
+	repository.saveAll(saveList);
     }
 }
