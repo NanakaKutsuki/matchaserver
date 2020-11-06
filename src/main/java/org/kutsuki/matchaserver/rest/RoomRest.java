@@ -1,7 +1,10 @@
 package org.kutsuki.matchaserver.rest;
 
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -40,8 +43,6 @@ public class RoomRest extends AbstractDateTimeRest {
     private static final BigDecimal ALERT = BigDecimal.TEN;
     private static final DateTimeFormatter MMMM_DD_YYYY = DateTimeFormatter.ofPattern("MMMM dd, YYYY EEEE");
     private static final NumberFormat CURRENCY = NumberFormat.getCurrencyInstance();
-    private static final String LSB_HTML = "%5B";
-    private static final String RSB_HTML = "%5D";
     private static final String SOLD_OUT_TITLE = "SOLD OUT! ";
 
     @Autowired
@@ -361,26 +362,25 @@ public class RoomRest extends AbstractDateTimeRest {
     private Hotel getHotelByLink(String href) {
 	Hotel hotel = null;
 
-	String link = StringUtils.replace(href, LSB_HTML, Character.toString('['));
-	link = StringUtils.replace(link, RSB_HTML, Character.toString(']'));
+	try {
+	    String link = URLDecoder.decode(href, StandardCharsets.UTF_8.toString());
 
-	String trivagoId = StringUtils.substringBetween(link, HotelRest.GEO_DISTANCE_ITEM, Character.toString('&'));
-	String date = StringUtils.substringBetween(link, HotelRest.ARRIVE, Character.toString('&'));
+	    String trivagoId = StringUtils.substringBetween(link, HotelRest.GEO_DISTANCE_ITEM, Character.toString('&'));
+	    String date = StringUtils.substringBetween(link, HotelRest.ARRIVE, Character.toString('&'));
 
-	if (StringUtils.isNotBlank(trivagoId) && StringUtils.isNotBlank(date)) {
-	    hotel = hotelRepository.findByTrivagoId(trivagoId);
-	    if (hotel != null) {
-		try {
+	    if (StringUtils.isNotBlank(trivagoId) && StringUtils.isNotBlank(date)) {
+		hotel = hotelRepository.findByTrivagoId(trivagoId);
+		if (hotel != null) {
 		    ZonedDateTime zdt = toZonedDateTime(date, LocalTime.MIN);
 		    hotel.setNextRuntime(zdt);
-		} catch (DateTimeParseException e) {
-		    EmailManager.emailException("Exception thrown while parsing: " + date, e);
 		}
 	    }
-	}
 
-	if (hotel == null) {
-	    EmailManager.emailHome("Unable to Find Hotel!", link);
+	    if (hotel == null) {
+		EmailManager.emailHome("Unable to Find Hotel!", link);
+	    }
+	} catch (DateTimeParseException | UnsupportedEncodingException e) {
+	    EmailManager.emailException("Exception thrown while parsing: " + href, e);
 	}
 
 	return hotel;
