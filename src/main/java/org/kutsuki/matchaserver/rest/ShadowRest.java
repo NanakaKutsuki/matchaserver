@@ -10,14 +10,18 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.kutsuki.matchaserver.EmailManager;
+import org.kutsuki.matchaserver.document.Position;
 import org.kutsuki.matchaserver.model.OptionType;
 import org.kutsuki.matchaserver.model.OrderModel;
-import org.kutsuki.matchaserver.model.PositionModel;
+import org.kutsuki.matchaserver.repository.PortfolioRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,37 +34,44 @@ public class ShadowRest {
 	    .appendPattern("d MMM yy").toFormatter(Locale.ENGLISH);
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("h:mma");
 
-    private static final String BUTTERFLY = "BUTTERFLY";
+    private static final String BACKRATIO = "BACKRATIO";
     private static final String BOT = "BOT ";
     private static final String BUY = "BUY ";
+    private static final String BUY_TO_CLOSE = "BUY_TO_CLOSE";
+    private static final String BUY_TO_OPEN = "BUY_TO_OPEN";
+    private static final String BUTTERFLY = "BUTTERFLY";
     private static final String CONDOR = "CONDOR";
     private static final String HUNDRED = "100";
     private static final String IRON_CONDOR = "IRON CONDOR";
     private static final String NEW = "NEW";
-    private static final String RATIO = "RATIO";
     private static final String SELL = "SELL ";
-    private static final String SHADOW_TRADER = "Shadow Trader";
+    private static final String SELL_TO_CLOSE = "SELL_TO_CLOSE";
+    private static final String SELL_TO_OPEN = "SELL_TO_OPEN";
     private static final String SOLD = "SOLD ";
+    private static final String ST_WEEKLY = "ST Weekly";
     private static final String WEEKLYS = "(Weeklys)";
     private static final String VERTICAL = "VERTICAL";
     private static final String UNBALANCED_BUTTERFLY = "~BUTTERFLY";
 
-    @Value("${email.shadow}")
-    private String emailShadow;
+    @Autowired
+    private PortfolioRepository repository;
 
-    @GetMapping("/rest/shadow/uploadText")
-    public ResponseEntity<String> uploadText(@RequestParam("text") String text) {
+    @Value("${email.portfolio}")
+    private String emailPortfolio;
+
+    @GetMapping("/rest/portfolio/uploadAlert")
+    public ResponseEntity<String> uploadAlert(@RequestParam("alert") String alert) {
 	try {
 	    StringBuilder subject = new StringBuilder();
 	    StringBuilder body = new StringBuilder();
 
-	    String escapedText = URLDecoder.decode(text, StandardCharsets.UTF_8.name());
-	    body.append(escapedText);
+	    String escaped = URLDecoder.decode(alert, StandardCharsets.UTF_8.toString());
+	    body.append(escaped);
 
 	    if (StringUtils.startsWith(body, Character.toString('#'))) {
-		subject.append(StringUtils.substringBefore(escapedText, StringUtils.SPACE));
+		subject.append(StringUtils.substringBefore(escaped, StringUtils.SPACE));
 
-		if (StringUtils.containsIgnoreCase(escapedText, NEW)) {
+		if (StringUtils.containsIgnoreCase(escaped, NEW)) {
 		    subject.append(StringUtils.SPACE);
 		    subject.append(NEW);
 		}
@@ -69,7 +80,7 @@ public class ShadowRest {
 		body.append(EmailManager.NEW_LINE);
 		body.append(EmailManager.NEW_LINE);
 
-		for (OrderModel order : createOrder(escapedText)) {
+		for (OrderModel order : createOrder(escaped)) {
 		    if (!first) {
 			subject.append(StringUtils.SPACE);
 			subject.append('&');
@@ -92,14 +103,14 @@ public class ShadowRest {
 		subject.append(StringUtils.SPACE);
 		subject.append(LocalTime.now().format(TIME_FORMATTER));
 	    } else {
-		subject.append(SHADOW_TRADER);
+		subject.append(ST_WEEKLY);
 		subject.append(StringUtils.SPACE);
 		subject.append(LocalTime.now().format(TIME_FORMATTER));
 	    }
 
-	    EmailManager.email(emailShadow, subject.toString(), body.toString());
+	    EmailManager.email(emailPortfolio, subject.toString(), body.toString());
 	} catch (UnsupportedEncodingException e) {
-	    EmailManager.emailException(text, e);
+	    EmailManager.emailException(alert, e);
 	}
 
 	// return finished
@@ -109,7 +120,8 @@ public class ShadowRest {
     private List<OrderModel> createOrder(String body) {
 	List<OrderModel> orderList = new ArrayList<OrderModel>();
 
-	if (StringUtils.contains(body, OptionType.CALL.name()) || StringUtils.contains(body, OptionType.PUT.name())) {
+	if (StringUtils.contains(body, OptionType.CALL.toString())
+		|| StringUtils.contains(body, OptionType.PUT.toString())) {
 	    try {
 		for (String split : StringUtils.split(body, '&')) {
 		    if (StringUtils.contains(split, BOT)) {
@@ -123,10 +135,10 @@ public class ShadowRest {
 		    }
 
 		    String[] split2 = StringUtils.split(split, StringUtils.SPACE);
-		    if (StringUtils.contains(split, IRON_CONDOR)) {
+		    if (StringUtils.contains(split, BACKRATIO)) {
+			orderList.add(backratio(split2));
+		    } else if (StringUtils.contains(split, IRON_CONDOR)) {
 			orderList.add(ironCondor(split2));
-		    } else if (StringUtils.contains(split, RATIO)) {
-			orderList.add(ratio(split2));
 		    } else if (StringUtils.contains(split, UNBALANCED_BUTTERFLY)) {
 			orderList.add(unbalancedButterfly(split2));
 		    } else if (StringUtils.contains(split, VERTICAL)) {
@@ -149,12 +161,73 @@ public class ShadowRest {
 	return orderList;
     }
 
+    private String getPortfolio(List<OrderModel> orderList) {
+	LocalDate now = LocalDate.now();
+	Map<String, Position> portfolioMap = new HashMap<String, Position>();
+	for (Position position : repository.findAll()) {
+	    if (now.isAfter(position.getExpiry())) {
+		repository.delete(position);
+	    }
+
+	    portfolioMap.put(position.getFullSymbol(), position);
+	}
+
+	for (OrderModel order : orderList) {
+	    for (Position orderEntry : order.getPositionList()) {
+		Position position = portfolioMap.get(orderEntry.getFullSymbol());
+		if (position != null) {
+		    position.setQuantity(position.getQuantity() + orderEntry.getQuantity());
+
+		    if (position.getQuantity() == 0) {
+			if (orderEntry.getQuantity() > 0) {
+			    orderEntry.setSide(BUY_TO_CLOSE);
+			}
+
+			portfolioMap.remove(position.getFullSymbol());
+			repository.delete(position);
+		    } else {
+			portfolioMap.put(position.getFullSymbol(), position);
+			repository.save(position);
+		    }
+		} else {
+		    portfolioMap.put(orderEntry.getFullSymbol(), orderEntry);
+		    repository.save(orderEntry);
+		}
+	    }
+	}
+
+	return null;
+    }
+
+    private OrderModel backratio(String[] split) throws Exception {
+	int quantity = parseQuantity(split[0]);
+	List<BigDecimal> ratioList = parseSlashes(split[1]);
+	String symbol = parseSymbol(split[3]);
+
+	int i = 0;
+	if (StringUtils.equalsIgnoreCase(split[4], HUNDRED)) {
+	    i++;
+	}
+
+	if (StringUtils.equalsIgnoreCase(split[5], WEEKLYS)) {
+	    i++;
+	}
+
+	LocalDate expiry = parseExpiry(split[4 + i], split[5 + i], split[6 + i]);
+	List<BigDecimal> strikeList = parseSlashes(split[7 + i]);
+	OptionType type = parseType(split[8 + i]);
+	BigDecimal price = parsePrice(split[9 + i]);
+
+	OrderModel order = new OrderModel(BACKRATIO, price, split[9 + i]);
+	int qty1 = -quantity * ratioList.get(0).intValue();
+	order.addPosition(new Position(qty1, symbol, expiry, strikeList.get(0), type));
+	int qty2 = quantity * ratioList.get(1).intValue();
+	order.addPosition(new Position(qty2, symbol, expiry, strikeList.get(1), type));
+
+	return order;
+    }
+
     private OrderModel butterfly(String[] split) throws Exception {
-	// String body = "#402 NEW BOT +2 BUTTERFLY FB 10 JUL 20 245/250/255 CALL @.53
-	// ISE & SOLD -8 FB 10 JUL 20 210 PUT @.14 CBOE";
-	// String body = "#425 SOLD -1 BUTTERFLY AMZN 100 21 AUG 20 3290/3300/3310 CALL
-	// @.87 CBOE Official exit, am holding a couple into close to see what happens
-	// but doesn't look good...";
 	int quantity = parseQuantity(split[0]);
 	String symbol = parseSymbol(split[2]);
 
@@ -171,41 +244,17 @@ public class ShadowRest {
 	List<BigDecimal> strikeList = parseSlashes(split[6 + i]);
 	OptionType type = parseType(split[7 + i]);
 	BigDecimal price = parsePrice(split[8 + i]);
-	OrderModel order = new OrderModel(BUTTERFLY, price);
 
-	PositionModel position = new PositionModel();
-	position.setExpiry(expiry);
-	position.setQuantity(quantity);
-	position.setStrike(strikeList.get(0));
-	position.setSymbol(symbol);
-	position.setType(type);
-	order.addPosition(position);
-
-	PositionModel position2 = new PositionModel();
-	position2.setExpiry(expiry);
-	position2.setQuantity(-quantity * 2);
-	position2.setStrike(strikeList.get(1));
-	position2.setSymbol(symbol);
-	position2.setType(type);
-	order.addPosition(position2);
-
-	PositionModel position3 = new PositionModel();
-	position3.setExpiry(expiry);
-	position3.setQuantity(quantity);
-	position3.setStrike(strikeList.get(2));
-	position3.setSymbol(symbol);
-	position3.setType(type);
-	order.addPosition(position3);
+	OrderModel order = new OrderModel(BUTTERFLY, price, split[8 + i]);
+	order.addPosition(new Position(quantity, symbol, expiry, strikeList.get(0), type));
+	int qty2 = -quantity * 2;
+	order.addPosition(new Position(qty2, symbol, expiry, strikeList.get(1), type));
+	order.addPosition(new Position(quantity, symbol, expiry, strikeList.get(2), type));
 
 	return order;
     }
 
     private OrderModel condor(String[] split) throws Exception {
-	// String body = "#441 BOT +2 CONDOR SPX 18 SEP 20 3470/3475/3490/3555 CALL
-	// @-.95cr CBOE (2 of potential 4--above .80cr is good)";
-	// String body = "#400 SOLD -1 CONDOR AAPL 10 JUL 20 365/370/372.5/377.5 CALL
-	// @1.28 CBOE Closing out here. We only have one unit officially and AAPL is
-	// breaking to new ATH.";
 	int quantity = parseQuantity(split[0]);
 	String symbol = parseSymbol(split[2]);
 
@@ -222,50 +271,17 @@ public class ShadowRest {
 	List<BigDecimal> strikeList = parseSlashes(split[6 + i]);
 	OptionType type = parseType(split[7 + i]);
 	BigDecimal price = parsePrice(split[8 + i]);
-	OrderModel order = new OrderModel(CONDOR, price);
 
-	PositionModel position = new PositionModel();
-	position.setExpiry(expiry);
-	position.setQuantity(quantity);
-	position.setStrike(strikeList.get(0));
-	position.setSymbol(symbol);
-	position.setType(type);
-	order.addPosition(position);
-
-	PositionModel position2 = new PositionModel();
-	position2.setExpiry(expiry);
-	position2.setQuantity(-quantity);
-	position2.setStrike(strikeList.get(1));
-	position2.setSymbol(symbol);
-	position2.setType(type);
-	order.addPosition(position2);
-
-	PositionModel position3 = new PositionModel();
-	position3.setExpiry(expiry);
-	position3.setQuantity(-quantity);
-	position3.setStrike(strikeList.get(2));
-	position3.setSymbol(symbol);
-	position3.setType(type);
-	order.addPosition(position3);
-
-	PositionModel position4 = new PositionModel();
-	position4.setExpiry(expiry);
-	position4.setQuantity(quantity);
-	position4.setStrike(strikeList.get(3));
-	position4.setSymbol(symbol);
-	position4.setType(type);
-	order.addPosition(position4);
+	OrderModel order = new OrderModel(CONDOR, price, split[8 + i]);
+	order.addPosition(new Position(quantity, symbol, expiry, strikeList.get(0), type));
+	order.addPosition(new Position(-quantity, symbol, expiry, strikeList.get(1), type));
+	order.addPosition(new Position(-quantity, symbol, expiry, strikeList.get(2), type));
+	order.addPosition(new Position(quantity, symbol, expiry, strikeList.get(3), type));
 
 	return order;
     }
 
     private OrderModel ironCondor(String[] split) throws Exception {
-	// String body = "#418 NEW SOLD -2 IRON CONDOR FB 7 AUG 20 250/252.5/250/247.5
-	// CALL/PUT @2.09 CBOE iron butterfly for staying flat into end of week. good
-	// r/r.";
-	// String body = "#467 NEW SOLD -1 IRON CONDOR AAPL 100 (Weeklys) 30 OCT 20
-	// 110/111/110/109 CALL/PUT @.80 MIAX Iron butterfly to illustrate concept with
-	// tiny size and risk.";
 	int quantity = parseQuantity(split[0]);
 	String symbol = parseSymbol(split[3]);
 
@@ -282,94 +298,17 @@ public class ShadowRest {
 	List<BigDecimal> strikeList = parseSlashes(split[7 + i]);
 	List<OptionType> type = parseTypes(split[8 + i]);
 	BigDecimal price = parsePrice(split[9 + i]);
-	OrderModel order = new OrderModel(IRON_CONDOR, price);
 
-	PositionModel position = new PositionModel();
-	position.setExpiry(expiry);
-	position.setQuantity(quantity);
-	position.setStrike(strikeList.get(0));
-	position.setSymbol(symbol);
-	position.setType(type.get(0));
-	order.addPosition(position);
-
-	PositionModel position2 = new PositionModel();
-	position2.setExpiry(expiry);
-	position2.setQuantity(-quantity);
-	position2.setStrike(strikeList.get(1));
-	position2.setSymbol(symbol);
-	position2.setType(type.get(0));
-	order.addPosition(position2);
-
-	PositionModel position3 = new PositionModel();
-	position3.setExpiry(expiry);
-	position3.setQuantity(quantity);
-	position3.setStrike(strikeList.get(2));
-	position3.setSymbol(symbol);
-	position3.setType(type.get(1));
-	order.addPosition(position3);
-
-	PositionModel position4 = new PositionModel();
-	position4.setExpiry(expiry);
-	position4.setQuantity(-quantity);
-	position4.setStrike(strikeList.get(3));
-	position4.setSymbol(symbol);
-	position4.setType(type.get(1));
-	order.addPosition(position4);
-
-	return order;
-    }
-
-    private OrderModel ratio(String[] split) throws Exception {
-	// String body = "#468 SOLD -2 1/2 BACKRATIO SPX 100 (Weeklys) 2 NOV 20
-	// 3230/3210 PUT @.10cr Adding two more here (now it's directional, not just for
-	// credit). If margin is an issue, bwb or pass.";
-	// String body = "#460 NEW SOLD -6 1/3 BACKRATIO NFLX 23 OCT 20 472.5/460 PUT
-	// @.00 CBOE";
-	// "#456 BOT +2 1/3 BACKRATIO NFLX 100 16 OCT 20 585/600 CALL @.05db ISE Closing
-	// half at close to zero to decrease margin."
-	int quantity = parseQuantity(split[0]);
-	List<BigDecimal> ratioList = parseSlashes(split[1]);
-	String symbol = parseSymbol(split[3]);
-
-	int i = 0;
-	if (StringUtils.equalsIgnoreCase(split[4], HUNDRED)) {
-	    i++;
-	}
-
-	if (StringUtils.equalsIgnoreCase(split[5], WEEKLYS)) {
-	    i++;
-	}
-
-	LocalDate expiry = parseExpiry(split[4 + i], split[5 + i], split[6 + i]);
-	List<BigDecimal> strikeList = parseSlashes(split[7 + i]);
-	OptionType type = parseType(split[8 + i]);
-	BigDecimal price = parsePrice(split[9 + i]);
-	OrderModel order = new OrderModel(RATIO, price);
-
-	PositionModel position = new PositionModel();
-	position.setExpiry(expiry);
-	position.setQuantity(-quantity * ratioList.get(0).intValue());
-	position.setStrike(strikeList.get(0));
-	position.setSymbol(symbol);
-	position.setType(type);
-	order.addPosition(position);
-
-	PositionModel position2 = new PositionModel();
-	position2.setExpiry(expiry);
-	position2.setQuantity(quantity * ratioList.get(1).intValue());
-	position2.setStrike(strikeList.get(1));
-	position2.setSymbol(symbol);
-	position2.setType(type);
-	order.addPosition(position2);
+	OrderModel order = new OrderModel(IRON_CONDOR, price, split[9 + i]);
+	order.addPosition(new Position(quantity, symbol, expiry, strikeList.get(0), type.get(0)));
+	order.addPosition(new Position(-quantity, symbol, expiry, strikeList.get(1), type.get(0)));
+	order.addPosition(new Position(quantity, symbol, expiry, strikeList.get(2), type.get(1)));
+	order.addPosition(new Position(quantity, symbol, expiry, strikeList.get(3), type.get(1)));
 
 	return order;
     }
 
     private OrderModel single(String[] split) throws Exception {
-	// String body = "#414 SOLD -2 GLD 100 (Weeklys) 30 OCT 20 187 CALL @.36";
-	// String body = "#414 BOT +4 GLD 30 OCT 20 173 PUT @.10 PHLX I'll roll the dice
-	// on the Nov6 for now but this makes sense to close with one day to go and just
-	// $2.50 above";
 	int quantity = parseQuantity(split[0]);
 	String symbol = parseSymbol(split[1]);
 
@@ -386,24 +325,14 @@ public class ShadowRest {
 	BigDecimal strike = parseStrike(split[5 + i]);
 	OptionType type = parseType(split[6 + i]);
 	BigDecimal price = parsePrice(split[7 + i]);
-	OrderModel order = new OrderModel(type.name(), price);
 
-	PositionModel position = new PositionModel();
-	position.setExpiry(expiry);
-	position.setQuantity(quantity);
-	position.setStrike(strike);
-	position.setSymbol(symbol);
-	position.setType(type);
-	order.addPosition(position);
+	OrderModel order = new OrderModel(type.toString(), price, split[7 + i]);
+	order.addPosition(new Position(quantity, symbol, expiry, strike, type));
 
 	return order;
     }
 
     private OrderModel unbalancedButterfly(String[] split) throws Exception {
-	// String body = "#449 WORKING SELL -2 1/3/2 ~BUTTERFLY SPX 2 OCT 20
-	// 3420/3440/3480 CALL @.25 cr LMT";
-	// String body = "#424 BOT +4 1/3/2 ~BUTTERFLY SPX 100 (Weeklys) 21 AUG 20
-	// 3405/3420/3450 CALL @.05db CBOE (PM options, not the AM ones)";
 	int quantity = parseQuantity(split[0]);
 	List<BigDecimal> ratioList = parseSlashes(split[1]);
 	String symbol = parseSymbol(split[3]);
@@ -421,40 +350,19 @@ public class ShadowRest {
 	List<BigDecimal> strikeList = parseSlashes(split[7 + i]);
 	OptionType type = parseType(split[8 + i]);
 	BigDecimal price = parsePrice(split[9 + i]);
-	OrderModel order = new OrderModel(UNBALANCED_BUTTERFLY, price);
 
-	PositionModel position = new PositionModel();
-	position.setExpiry(expiry);
-	position.setQuantity(quantity * ratioList.get(0).intValue());
-	position.setStrike(strikeList.get(0));
-	position.setSymbol(symbol);
-	position.setType(type);
-	order.addPosition(position);
-
-	PositionModel position2 = new PositionModel();
-	position2.setExpiry(expiry);
-	position2.setQuantity(-quantity * ratioList.get(1).intValue());
-	position2.setStrike(strikeList.get(1));
-	position2.setSymbol(symbol);
-	position2.setType(type);
-	order.addPosition(position2);
-
-	PositionModel position3 = new PositionModel();
-	position3.setExpiry(expiry);
-	position3.setQuantity(quantity * ratioList.get(2).intValue());
-	position3.setStrike(strikeList.get(2));
-	position3.setSymbol(symbol);
-	position3.setType(type);
-	order.addPosition(position3);
+	OrderModel order = new OrderModel(UNBALANCED_BUTTERFLY, price, split[9 + i]);
+	int qty1 = quantity * ratioList.get(0).intValue();
+	order.addPosition(new Position(qty1, symbol, expiry, strikeList.get(0), type));
+	int qty2 = -quantity * ratioList.get(1).intValue();
+	order.addPosition(new Position(qty2, symbol, expiry, strikeList.get(1), type));
+	int qty3 = quantity * ratioList.get(2).intValue();
+	order.addPosition(new Position(qty3, symbol, expiry, strikeList.get(2), type));
 
 	return order;
     }
 
     private OrderModel vertical(String[] split) throws Exception {
-	// String body = "#64 SOLD -1 VERTICAL CMG 100 (Weeklys) 3 NOV 17 275/265 PUT
-	// @5.22 ISE (itm put vertical for credit) -Peter";
-	// String body = "#458 BOT +1 VERTICAL SPX 21 OCT 20 3375/3365 PUT @1.45 COBE
-	// tightens it up to only $5 of downside risk. Looks more bearish now.";
 	int quantity = parseQuantity(split[0]);
 	String symbol = parseSymbol(split[2]);
 
@@ -471,23 +379,10 @@ public class ShadowRest {
 	List<BigDecimal> strikeList = parseSlashes(split[6 + i]);
 	OptionType type = parseType(split[7 + i]);
 	BigDecimal price = parsePrice(split[8 + i]);
-	OrderModel order = new OrderModel(VERTICAL, price);
 
-	PositionModel position = new PositionModel();
-	position.setExpiry(expiry);
-	position.setQuantity(quantity);
-	position.setStrike(strikeList.get(0));
-	position.setSymbol(symbol);
-	position.setType(type);
-	order.addPosition(position);
-
-	PositionModel position2 = new PositionModel();
-	position2.setExpiry(expiry);
-	position2.setQuantity(-quantity);
-	position2.setStrike(strikeList.get(1));
-	position2.setSymbol(symbol);
-	position2.setType(type);
-	order.addPosition(position2);
+	OrderModel order = new OrderModel(VERTICAL, price, split[8 + i]);
+	order.addPosition(new Position(quantity, symbol, expiry, strikeList.get(0), type));
+	order.addPosition(new Position(-quantity, symbol, expiry, strikeList.get(1), type));
 
 	return order;
     }

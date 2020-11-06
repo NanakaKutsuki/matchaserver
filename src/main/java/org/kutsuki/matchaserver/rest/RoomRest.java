@@ -244,11 +244,11 @@ public class RoomRest extends AbstractDateTimeRest {
 		}
 
 		if (model.isSoldOut()) {
-		    sb.append(' ');
+		    sb.append(StringUtils.SPACE);
 		    sb.append(SOLD_OUT_TITLE);
 		} else {
 		    sb.append(':');
-		    sb.append(' ');
+		    sb.append(StringUtils.SPACE);
 		}
 
 		sb.append(model.getHotelName());
@@ -293,11 +293,11 @@ public class RoomRest extends AbstractDateTimeRest {
 		    sb.append(CURRENCY.format(room.getRate()));
 
 		    if (room.isSoldOut()) {
-			sb.append(' ');
+			sb.append(StringUtils.SPACE);
 			sb.append(SOLD_OUT_TITLE);
 		    } else {
 			sb.append(':');
-			sb.append(' ');
+			sb.append(StringUtils.SPACE);
 		    }
 
 		    sb.append(room.getHotelName());
@@ -310,7 +310,7 @@ public class RoomRest extends AbstractDateTimeRest {
 
     // emailRateAlert
     private void emailRateAlert(String to, Room room, BigDecimal prev) {
-	String subject = "Rate Alert: " + room.getHotelName() + " in " + room.getCityName() + ' '
+	String subject = "Rate Alert: " + room.getHotelName() + " in " + room.getCityName() + StringUtils.SPACE
 		+ CURRENCY.format(room.getRate());
 
 	StringBuilder sb = new StringBuilder();

@@ -6,15 +6,18 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.kutsuki.matchaserver.EmailManager;
+import org.kutsuki.matchaserver.document.Position;
 
 public class OrderModel {
     private BigDecimal price;
-    private List<PositionModel> positionList;
+    private List<Position> positionList;
+    private String priceString;
     private String spread;
 
-    public OrderModel(String spread, BigDecimal price) {
-	this.positionList = new ArrayList<PositionModel>();
+    public OrderModel(String spread, BigDecimal price, String priceString) {
+	this.positionList = new ArrayList<Position>();
 	this.price = price;
+	this.priceString = priceString;
 	this.spread = spread;
     }
 
@@ -26,19 +29,30 @@ public class OrderModel {
 	sb.append(StringUtils.SPACE);
 	sb.append(getSpread());
 	sb.append(StringUtils.SPACE);
-	sb.append(price);
+	sb.append(priceString);
 	sb.append(EmailManager.NEW_LINE);
 
-	for (PositionModel position : positionList) {
+	for (Position position : positionList) {
 	    sb.append(position);
+
+	    if (StringUtils.equals(spread, OptionType.CALL.toString())
+		    || StringUtils.equals(spread, OptionType.PUT.toString())) {
+		sb.append(StringUtils.SPACE);
+		sb.append(price);
+	    }
+
 	    sb.append(EmailManager.NEW_LINE);
 	}
 
 	return sb.toString();
     }
 
-    public void addPosition(PositionModel model) {
+    public void addPosition(Position model) {
 	positionList.add(model);
+    }
+
+    public List<Position> getPositionList() {
+	return positionList;
     }
 
     public String getSpread() {

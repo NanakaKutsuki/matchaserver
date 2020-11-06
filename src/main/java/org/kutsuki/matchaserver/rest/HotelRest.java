@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.commons.lang3.StringUtils;
 import org.kutsuki.matchaserver.EmailManager;
 import org.kutsuki.matchaserver.MatchaTracker;
 import org.kutsuki.matchaserver.document.Hotel;
@@ -203,9 +204,9 @@ public class HotelRest extends AbstractDateTimeRest {
 
 	    for (Hotel hotel : MatchaTracker.UNFINISHED_MAP.values()) {
 		sb.append(hotel.getName());
-		sb.append(' ');
+		sb.append(StringUtils.SPACE);
 		sb.append(hotel.getId());
-		sb.append(' ');
+		sb.append(StringUtils.SPACE);
 		sb.append(hotel.getNextRuntime());
 		sb.append(EmailManager.NEW_LINE);
 	    }
