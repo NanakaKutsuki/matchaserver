@@ -187,8 +187,6 @@ public class PortfolioRest {
 	    } catch (Exception e) {
 		EmailManager.emailException("Error parsing text", e);
 	    }
-	} else {
-	    EmailManager.emailHome("Error parsing text into order", body);
 	}
 
 	return orderList;
@@ -209,9 +207,9 @@ public class PortfolioRest {
 	    for (Position orderEntry : order.getPositionList()) {
 		Position position = portfolioMap.get(orderEntry.getFullSymbol());
 		if (position != null) {
-		    position.setQuantity(position.getQuantity() + orderEntry.getQuantity());
+		    int qty = position.getQuantity() + orderEntry.getQuantity();
 
-		    if (position.getQuantity() == 0) {
+		    if (qty == 0) {
 			if (orderEntry.getQuantity() > 0) {
 			    orderEntry.setSide(BUY_TO_CLOSE);
 			} else {
@@ -219,6 +217,7 @@ public class PortfolioRest {
 			}
 
 			if (!working) {
+			    position.setQuantity(qty);
 			    portfolioMap.remove(position.getFullSymbol());
 			    deleteList.add(position);
 			}
@@ -230,6 +229,7 @@ public class PortfolioRest {
 			}
 
 			if (!working) {
+			    position.setQuantity(qty);
 			    portfolioMap.put(position.getFullSymbol(), position);
 			    saveList.add(position);
 			}
