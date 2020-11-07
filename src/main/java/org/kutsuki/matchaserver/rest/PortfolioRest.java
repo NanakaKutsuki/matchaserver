@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
+
 import org.apache.commons.lang3.StringUtils;
 import org.kutsuki.matchaserver.EmailManager;
 import org.kutsuki.matchaserver.document.Position;
@@ -63,10 +65,17 @@ public class PortfolioRest {
 
     private List<Position> deleteList;
     private List<Position> saveList;
+    private Map<String, Position> portfolioMap;
 
-    public PortfolioRest() {
+    @PostConstruct
+    public void postConstruct() {
 	this.deleteList = new ArrayList<Position>();
 	this.saveList = new ArrayList<Position>();
+	this.portfolioMap = new HashMap<String, Position>();
+
+	for (Position position : repository.findAll()) {
+	    this.portfolioMap.put(position.getFullSymbol(), position);
+	}
     }
 
     @GetMapping("/rest/portfolio/uploadAlert")
@@ -194,13 +203,11 @@ public class PortfolioRest {
 
     private String getPortfolio(List<OrderModel> orderList, boolean working) {
 	LocalDate now = LocalDate.now();
-	Map<String, Position> portfolioMap = new HashMap<String, Position>();
-	for (Position position : repository.findAll()) {
+	for (Position position : portfolioMap.values()) {
 	    if (now.isAfter(position.getExpiry())) {
 		deleteList.add(position);
+		portfolioMap.remove(position.getFullSymbol());
 	    }
-
-	    portfolioMap.put(position.getFullSymbol(), position);
 	}
 
 	for (OrderModel order : orderList) {
