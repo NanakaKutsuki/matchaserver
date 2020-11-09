@@ -20,9 +20,11 @@ import javax.annotation.PostConstruct;
 
 import org.apache.commons.lang3.StringUtils;
 import org.kutsuki.matchaserver.EmailManager;
+import org.kutsuki.matchaserver.document.Alert;
 import org.kutsuki.matchaserver.document.Position;
 import org.kutsuki.matchaserver.model.OptionType;
 import org.kutsuki.matchaserver.model.OrderModel;
+import org.kutsuki.matchaserver.repository.AlertRepository;
 import org.kutsuki.matchaserver.repository.PortfolioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -58,11 +60,15 @@ public class PortfolioRest {
     private static final String UNBALANCED_BUTTERFLY = "~BUTTERFLY";
 
     @Autowired
+    private AlertRepository alertRepository;
+
+    @Autowired
     private PortfolioRepository repository;
 
     @Value("${email.portfolio}")
     private String emailPortfolio;
 
+    private Alert lastAlert;
     private List<Position> deleteList;
     private List<Position> saveList;
     private Map<String, Position> portfolioMap;
@@ -71,88 +77,98 @@ public class PortfolioRest {
     public void postConstruct() {
 	this.deleteList = new ArrayList<Position>();
 	this.saveList = new ArrayList<Position>();
+	this.lastAlert = new Alert(StringUtils.EMPTY);
 	this.portfolioMap = new HashMap<String, Position>();
 
 	for (Position position : repository.findAll()) {
 	    this.portfolioMap.put(position.getFullSymbol(), position);
 	}
+
+	if (alertRepository.count() > 0) {
+	    this.lastAlert = alertRepository.findAll().get(0);
+	}
     }
 
     @GetMapping("/rest/portfolio/uploadAlert")
     public ResponseEntity<String> uploadAlert(@RequestParam("alert") String alert) {
-	try {
-	    StringBuilder subject = new StringBuilder();
-	    StringBuilder body = new StringBuilder();
-	    deleteList.clear();
-	    saveList.clear();
+	if (StringUtils.equalsIgnoreCase(alert, lastAlert.getAlert())) {
+	    try {
+		StringBuilder subject = new StringBuilder();
+		StringBuilder body = new StringBuilder();
+		deleteList.clear();
+		saveList.clear();
 
-	    String escaped = URLDecoder.decode(alert, StandardCharsets.UTF_8.toString());
-	    body.append(escaped);
+		String escaped = URLDecoder.decode(alert, StandardCharsets.UTF_8.toString());
+		body.append(escaped);
 
-	    if (StringUtils.startsWith(body, Character.toString('#'))) {
-		boolean working = false;
-		subject.append(StringUtils.substringBefore(escaped, StringUtils.SPACE));
-		body.append(EmailManager.NEW_LINE);
-		body.append(EmailManager.NEW_LINE);
+		if (StringUtils.startsWith(body, Character.toString('#'))) {
+		    boolean working = false;
+		    subject.append(StringUtils.substringBefore(escaped, StringUtils.SPACE));
+		    body.append(EmailManager.NEW_LINE);
+		    body.append(EmailManager.NEW_LINE);
 
-		if (StringUtils.containsIgnoreCase(escaped, NEW)) {
-		    subject.append(StringUtils.SPACE);
-		    subject.append(NEW);
-		}
-
-		if (StringUtils.containsIgnoreCase(escaped, WORKING)) {
-		    subject.append(StringUtils.SPACE);
-		    subject.append(WORKING);
-		    working = true;
-		}
-
-		boolean first = true;
-
-		List<OrderModel> orderList = createOrder(escaped);
-		String portfolio = getPortfolio(orderList, working);
-		for (OrderModel order : orderList) {
-		    if (!first) {
+		    if (StringUtils.containsIgnoreCase(escaped, NEW)) {
 			subject.append(StringUtils.SPACE);
-			subject.append('&');
-			body.append("--------------------------------------------------");
-			body.append(EmailManager.NEW_LINE);
+			subject.append(NEW);
 		    }
 
-		    subject.append(StringUtils.SPACE);
-		    subject.append(order.getSymbol());
-		    subject.append(StringUtils.SPACE);
-		    subject.append(order.getSpread());
-
-		    if (working) {
-			body.append(WORKING);
-			body.append(StringUtils.SPACE);
-			body.append(WORKING);
-			body.append(StringUtils.SPACE);
-			body.append(WORKING);
-			body.append(StringUtils.SPACE);
-			body.append(WORKING_EXPLAINATION);
-			body.append(EmailManager.NEW_LINE);
-			body.append(EmailManager.NEW_LINE);
+		    if (StringUtils.containsIgnoreCase(escaped, WORKING)) {
+			subject.append(StringUtils.SPACE);
+			subject.append(WORKING);
+			working = true;
 		    }
 
-		    body.append(order);
-		    first = false;
+		    boolean first = true;
+
+		    List<OrderModel> orderList = createOrder(escaped);
+		    String portfolio = getPortfolio(orderList, working);
+		    for (OrderModel order : orderList) {
+			if (!first) {
+			    subject.append(StringUtils.SPACE);
+			    subject.append('&');
+			    body.append("--------------------------------------------------");
+			    body.append(EmailManager.NEW_LINE);
+			}
+
+			subject.append(StringUtils.SPACE);
+			subject.append(order.getSymbol());
+			subject.append(StringUtils.SPACE);
+			subject.append(order.getSpread());
+
+			if (working) {
+			    body.append(WORKING);
+			    body.append(StringUtils.SPACE);
+			    body.append(WORKING);
+			    body.append(StringUtils.SPACE);
+			    body.append(WORKING);
+			    body.append(StringUtils.SPACE);
+			    body.append(WORKING_EXPLAINATION);
+			    body.append(EmailManager.NEW_LINE);
+			    body.append(EmailManager.NEW_LINE);
+			}
+
+			body.append(order);
+			first = false;
+		    }
+		    body.append(portfolio);
+
+		    subject.append(StringUtils.SPACE);
+		    subject.append(LocalTime.now().format(TIME_FORMATTER));
+		} else {
+		    subject.append(ST_WEEKLY);
+		    subject.append(StringUtils.SPACE);
+		    subject.append(LocalTime.now().format(TIME_FORMATTER));
+		    body.append(getPortfolio(Collections.emptyList(), false));
 		}
-		body.append(portfolio);
 
-		subject.append(StringUtils.SPACE);
-		subject.append(LocalTime.now().format(TIME_FORMATTER));
-	    } else {
-		subject.append(ST_WEEKLY);
-		subject.append(StringUtils.SPACE);
-		subject.append(LocalTime.now().format(TIME_FORMATTER));
-		body.append(getPortfolio(Collections.emptyList(), false));
+		EmailManager.email(emailPortfolio, subject.toString(), body.toString());
+		resolveRepo();
+	    } catch (UnsupportedEncodingException e) {
+		EmailManager.emailException(alert, e);
 	    }
 
-	    EmailManager.email(emailPortfolio, subject.toString(), body.toString());
-	    resolveRepo();
-	} catch (UnsupportedEncodingException e) {
-	    EmailManager.emailException(alert, e);
+	    lastAlert.setAlert(alert);
+	    alertRepository.save(lastAlert);
 	}
 
 	// return finished
@@ -222,24 +238,18 @@ public class PortfolioRest {
 			} else {
 			    orderEntry.setSide(SELL_TO_CLOSE);
 			}
-
-			if (!working) {
-			    position.setQuantity(qty);
-			    portfolioMap.remove(position.getFullSymbol());
-			    deleteList.add(position);
-			}
 		    } else {
 			if (orderEntry.getQuantity() > 0) {
 			    orderEntry.setSide(BUY_TO_OPEN);
 			} else {
 			    orderEntry.setSide(SELL_TO_OPEN);
 			}
+		    }
 
-			if (!working) {
-			    position.setQuantity(qty);
-			    portfolioMap.put(position.getFullSymbol(), position);
-			    saveList.add(position);
-			}
+		    if (!working) {
+			position.setQuantity(qty);
+			portfolioMap.put(position.getFullSymbol(), position);
+			saveList.add(position);
 		    }
 		} else {
 		    if (orderEntry.getQuantity() > 0) {
