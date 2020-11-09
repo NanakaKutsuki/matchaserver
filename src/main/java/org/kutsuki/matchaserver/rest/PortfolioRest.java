@@ -94,6 +94,18 @@ public class PortfolioRest {
 	return lastAlert.getAlertId();
     }
 
+    @GetMapping("/rest/portfolio/reloadCache")
+    public ResponseEntity<String> reloadCache() {
+	portfolioMap.clear();
+
+	for (Position position : repository.findAll()) {
+	    portfolioMap.put(position.getFullSymbol(), position);
+	}
+
+	// return finished
+	return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/rest/portfolio/uploadAlert")
     public ResponseEntity<String> uploadAlert(@RequestParam("id") String uriId,
 	    @RequestParam("alert") String uriAlert) {
