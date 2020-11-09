@@ -1,17 +1,13 @@
 package org.kutsuki.matchaserver.document;
 
 public class Alert extends AbstractDocument {
-    private String alert;
+    private String alertId;
 
-    public Alert(String alert) {
-	this.alert = alert;
+    public String getAlertId() {
+	return alertId;
     }
 
-    public String getAlert() {
-	return alert;
-    }
-
-    public void setAlert(String alert) {
-	this.alert = alert;
+    public void setAlertId(String alertId) {
+	this.alertId = alertId;
     }
 }

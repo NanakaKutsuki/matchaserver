@@ -13,7 +13,6 @@ public class MatchaServerApplicationTests {
 
     @Test
     public void contextLoads() {
-	System.out.println(repository.findAll().get(0).getAlert());
 	Assertions.assertTrue(repository.count() > 0, "Should be stuff in the database");
     }
 }

@@ -77,7 +77,7 @@ public class PortfolioRest {
     public void postConstruct() {
 	this.deleteList = new ArrayList<Position>();
 	this.saveList = new ArrayList<Position>();
-	this.lastAlert = new Alert(StringUtils.EMPTY);
+	this.lastAlert = new Alert();
 	this.portfolioMap = new HashMap<String, Position>();
 
 	for (Position position : repository.findAll()) {
@@ -89,9 +89,14 @@ public class PortfolioRest {
 	}
     }
 
+    @GetMapping("/rest/portfolio/getLastAlertId")
+    public String getLastAlertId() {
+	return lastAlert.getAlertId();
+    }
+
     @GetMapping("/rest/portfolio/uploadAlert")
-    public ResponseEntity<String> uploadAlert(@RequestParam("alert") String alert) {
-	if (StringUtils.equalsIgnoreCase(alert, lastAlert.getAlert())) {
+    public ResponseEntity<String> uploadAlert(@RequestParam("id") String id, @RequestParam("alert") String alert) {
+	if (StringUtils.equalsIgnoreCase(id, lastAlert.getAlertId())) {
 	    try {
 		StringBuilder subject = new StringBuilder();
 		StringBuilder body = new StringBuilder();
@@ -167,7 +172,7 @@ public class PortfolioRest {
 		EmailManager.emailException(alert, e);
 	    }
 
-	    lastAlert.setAlert(alert);
+	    lastAlert.setAlertId(id);
 	    alertRepository.save(lastAlert);
 	}
 
