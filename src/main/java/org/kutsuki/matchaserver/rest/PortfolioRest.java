@@ -95,7 +95,16 @@ public class PortfolioRest {
     }
 
     @GetMapping("/rest/portfolio/uploadAlert")
-    public ResponseEntity<String> uploadAlert(@RequestParam("id") String id, @RequestParam("alert") String alert) {
+    public ResponseEntity<String> uploadAlert(@RequestParam("id") String uriId,
+	    @RequestParam("alert") String uriAlert) {
+	String id = lastAlert.getAlertId();
+
+	try {
+	    id = URLDecoder.decode(uriId, StandardCharsets.UTF_8.toString());
+	} catch (UnsupportedEncodingException e) {
+	    EmailManager.emailException(uriId, e);
+	}
+
 	if (!StringUtils.equalsIgnoreCase(id, lastAlert.getAlertId())) {
 	    try {
 		StringBuilder subject = new StringBuilder();
@@ -103,7 +112,7 @@ public class PortfolioRest {
 		deleteList.clear();
 		saveList.clear();
 
-		String escaped = URLDecoder.decode(alert, StandardCharsets.UTF_8.toString());
+		String escaped = URLDecoder.decode(uriAlert, StandardCharsets.UTF_8.toString());
 		body.append(escaped);
 
 		if (StringUtils.startsWith(body, Character.toString('#'))) {
@@ -169,7 +178,7 @@ public class PortfolioRest {
 		EmailManager.email(emailPortfolio, subject.toString(), body.toString());
 		resolveRepo();
 	    } catch (UnsupportedEncodingException e) {
-		EmailManager.emailException(alert, e);
+		EmailManager.emailException(uriAlert, e);
 	    }
 
 	    lastAlert.setAlertId(id);
@@ -227,8 +236,11 @@ public class PortfolioRest {
 	for (Position position : portfolioMap.values()) {
 	    if (now.isAfter(position.getExpiry())) {
 		deleteList.add(position);
-		portfolioMap.remove(position.getFullSymbol());
 	    }
+	}
+
+	for (Position position : deleteList) {
+	    portfolioMap.remove(position.getFullSymbol());
 	}
 
 	for (OrderModel order : orderList) {
