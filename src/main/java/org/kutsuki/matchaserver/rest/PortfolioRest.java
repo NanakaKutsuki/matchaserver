@@ -96,7 +96,7 @@ public class PortfolioRest {
 
     @GetMapping("/rest/portfolio/uploadAlert")
     public ResponseEntity<String> uploadAlert(@RequestParam("id") String id, @RequestParam("alert") String alert) {
-	if (StringUtils.equalsIgnoreCase(id, lastAlert.getAlertId())) {
+	if (!StringUtils.equalsIgnoreCase(id, lastAlert.getAlertId())) {
 	    try {
 		StringBuilder subject = new StringBuilder();
 		StringBuilder body = new StringBuilder();
