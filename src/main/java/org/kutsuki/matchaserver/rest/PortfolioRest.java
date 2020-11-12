@@ -11,8 +11,10 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.annotation.PostConstruct;
 
@@ -20,10 +22,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.kutsuki.matchaserver.EmailManager;
 import org.kutsuki.matchaserver.document.Alert;
 import org.kutsuki.matchaserver.document.Position;
-import org.kutsuki.matchaserver.portfolio.OptionType;
-import org.kutsuki.matchaserver.portfolio.OrderModel;
-import org.kutsuki.matchaserver.portfolio.PortfolioManager;
+import org.kutsuki.matchaserver.model.OptionType;
+import org.kutsuki.matchaserver.model.OrderModel;
 import org.kutsuki.matchaserver.repository.AlertRepository;
+import org.kutsuki.matchaserver.repository.PortfolioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -54,23 +56,31 @@ public class PortfolioRest {
     private static final String UNBALANCED_BUTTERFLY = "~BUTTERFLY";
 
     private Alert lastAlert;
-
-    @Autowired
-    private PortfolioManager manager;
+    private List<Position> deleteList;
+    private List<Position> saveList;
+    private Map<String, Position> portfolioMap;
 
     @Autowired
     private AlertRepository alertRepository;
+
+    @Autowired
+    private PortfolioRepository repository;
 
     @Value("${email.portfolio}")
     private String emailPortfolio;
 
     @PostConstruct
     public void postConstruct() {
+	this.deleteList = new ArrayList<Position>();
 	this.lastAlert = new Alert();
+	this.saveList = new ArrayList<Position>();
+	this.portfolioMap = new HashMap<String, Position>();
 
 	if (alertRepository.count() > 0) {
 	    this.lastAlert = alertRepository.findAll().get(0);
 	}
+
+	reloadCache();
     }
 
     @GetMapping("/rest/portfolio/getLastAlertId")
@@ -80,7 +90,11 @@ public class PortfolioRest {
 
     @GetMapping("/rest/portfolio/reloadCache")
     public ResponseEntity<String> reloadCache() {
-	manager.reloadCache();
+	portfolioMap.clear();
+
+	for (Position position : repository.findAll()) {
+	    portfolioMap.put(position.getFullSymbol(), position);
+	}
 
 	// return finished
 	return ResponseEntity.ok().build();
@@ -101,7 +115,8 @@ public class PortfolioRest {
 	    try {
 		StringBuilder subject = new StringBuilder();
 		StringBuilder body = new StringBuilder();
-		manager.clear();
+		deleteList.clear();
+		saveList.clear();
 
 		String escaped = URLDecoder.decode(uriAlert, StandardCharsets.UTF_8.toString());
 		body.append(escaped);
@@ -126,7 +141,7 @@ public class PortfolioRest {
 		    boolean first = true;
 
 		    List<OrderModel> orderList = createOrder(escaped);
-		    String portfolio = manager.getPortfolio(orderList, working);
+		    String portfolio = getPortfolio(orderList, working);
 		    for (OrderModel order : orderList) {
 			if (!first) {
 			    subject.append(StringUtils.SPACE);
@@ -163,11 +178,12 @@ public class PortfolioRest {
 		    subject.append(ST_WEEKLY);
 		    subject.append(StringUtils.SPACE);
 		    subject.append(LocalTime.now().format(TIME_FORMATTER));
-		    body.append(manager.getPortfolio(Collections.emptyList(), false));
+		    body.append(getPortfolio(Collections.emptyList(), false));
 		}
 
 		EmailManager.email(emailPortfolio, subject.toString(), body.toString());
-		manager.resolveRepo();
+		repository.deleteAll(deleteList);
+		repository.saveAll(saveList);
 	    } catch (UnsupportedEncodingException e) {
 		EmailManager.emailException(uriAlert, e);
 	    }
@@ -220,6 +236,71 @@ public class PortfolioRest {
 	}
 
 	return orderList;
+    }
+
+    private String getPortfolio(List<OrderModel> orderList, boolean working) {
+	LocalDate now = LocalDate.now();
+	for (Position position : portfolioMap.values()) {
+	    if (now.isAfter(position.getExpiry())) {
+		deleteList.add(position);
+	    }
+	}
+
+	for (Position position : deleteList) {
+	    portfolioMap.remove(position.getFullSymbol());
+	}
+
+	for (OrderModel order : orderList) {
+	    for (Position orderEntry : order.getPositionList()) {
+		Position position = portfolioMap.get(orderEntry.getFullSymbol());
+		if (position != null) {
+		    int qty = position.getQuantity() + orderEntry.getQuantity();
+
+		    if (orderEntry.getQuantity() > 0) {
+			orderEntry.setSide(StringUtils.trim(BUY));
+		    } else {
+			orderEntry.setSide(StringUtils.trim(SELL));
+		    }
+
+		    if (!working) {
+			position.setQuantity(qty);
+			portfolioMap.put(position.getFullSymbol(), position);
+			saveList.add(position);
+		    }
+		} else {
+		    if (orderEntry.getQuantity() > 0) {
+			orderEntry.setSide(StringUtils.trim(BUY));
+		    } else {
+			orderEntry.setSide(StringUtils.trim(SELL));
+		    }
+
+		    if (!working) {
+			portfolioMap.put(orderEntry.getFullSymbol(), orderEntry);
+			saveList.add(orderEntry);
+		    }
+		}
+	    }
+	}
+
+	StringBuilder sb = new StringBuilder();
+	sb.append(EmailManager.NEW_LINE);
+	sb.append(EmailManager.NEW_LINE);
+	sb.append("<b>[PORTFOLIO]</b>");
+
+	List<Position> portfolio = new ArrayList<Position>(portfolioMap.values());
+	Collections.sort(portfolio);
+	String symbol = StringUtils.EMPTY;
+	for (Position position : portfolio) {
+	    if (!symbol.equals(position.getSymbol())) {
+		symbol = position.getSymbol();
+		sb.append(EmailManager.NEW_LINE);
+	    }
+
+	    sb.append(position.getStatement());
+	    sb.append(EmailManager.NEW_LINE);
+	}
+
+	return sb.toString();
     }
 
     private OrderModel backratio(String[] split) throws Exception {

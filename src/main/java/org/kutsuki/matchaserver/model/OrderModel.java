@@ -1,4 +1,4 @@
-package org.kutsuki.matchaserver.portfolio;
+package org.kutsuki.matchaserver.model;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;

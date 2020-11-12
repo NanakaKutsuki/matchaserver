@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 import org.apache.commons.lang3.StringUtils;
-import org.kutsuki.matchaserver.portfolio.OptionType;
+import org.kutsuki.matchaserver.model.OptionType;
 import org.springframework.data.annotation.Transient;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -63,7 +63,7 @@ public class Position extends AbstractDocument implements Comparable<Position> {
     @JsonIgnore
     public String getOrder() {
 	StringBuilder sb = new StringBuilder();
-	sb.append(StringUtils.substringBefore(getSide(), Character.toString('_')));
+	sb.append(getSide());
 	sb.append(StringUtils.SPACE);
 
 	if (getQuantity() > 0) {
