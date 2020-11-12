@@ -76,10 +76,6 @@ public class PortfolioRest {
 	this.saveList = new ArrayList<Position>();
 	this.portfolioMap = new HashMap<String, Position>();
 
-	if (alertRepository.count() > 0) {
-	    this.lastAlert = alertRepository.findAll().get(0);
-	}
-
 	reloadCache();
     }
 
@@ -90,8 +86,11 @@ public class PortfolioRest {
 
     @GetMapping("/rest/portfolio/reloadCache")
     public ResponseEntity<String> reloadCache() {
-	portfolioMap.clear();
+	if (alertRepository.count() > 0) {
+	    this.lastAlert = alertRepository.findAll().get(0);
+	}
 
+	portfolioMap.clear();
 	for (Position position : repository.findAll()) {
 	    portfolioMap.put(position.getFullSymbol(), position);
 	}
