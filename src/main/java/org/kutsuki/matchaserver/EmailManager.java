@@ -51,22 +51,22 @@ public class EmailManager {
     }
 
     // email
-    public static boolean email(String to, String subject, String body) {
-	return email(fromMatcha, to, subject, body, null);
+    public static boolean email(String bcc, String subject, String body) {
+	return email(fromMatcha, bcc, subject, body, null);
     }
 
     // email with attachments
-    public static boolean emailAttachment(String to, String subject, String body, List<String> attachments) {
-	return email(fromMatcha, to, subject, body, attachments);
+    public static boolean emailAttachment(String bcc, String subject, String body, List<String> attachments) {
+	return email(fromMatcha, bcc, subject, body, attachments);
     }
 
     // email Home
     public static boolean emailHome(String subject, String body) {
-	return email(fromMatcha, toHome, subject, body, null);
+	return email(fromMatcha, null, subject, body, null);
     }
 
     // email
-    public static boolean email(final String userName, String to, String subject, String body,
+    public static boolean email(final String userName, String bcc, String subject, String body,
 	    List<String> attachments) {
 	Properties props = new Properties();
 	props.put(MAIL_SMTP_AUTH, Boolean.TRUE);
@@ -84,7 +84,10 @@ public class EmailManager {
 	try {
 	    message = new MimeMessage(session);
 	    message.setFrom(new InternetAddress(userName));
-	    message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
+	    message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toHome));
+	    if (bcc != null) {
+		message.setRecipients(Message.RecipientType.BCC, InternetAddress.parse(bcc));
+	    }
 	    message.setSubject(subject);
 
 	    MimeBodyPart mbp1 = new MimeBodyPart();
@@ -106,7 +109,7 @@ public class EmailManager {
 
 	    message.setContent(mp);
 	} catch (MessagingException | IOException e) {
-	    LOGGER.error("Failed to create message: " + to + StringUtils.SPACE + subject, e);
+	    LOGGER.error("Failed to create message: " + bcc + StringUtils.SPACE + subject, e);
 	}
 
 	return sendMessage(message);

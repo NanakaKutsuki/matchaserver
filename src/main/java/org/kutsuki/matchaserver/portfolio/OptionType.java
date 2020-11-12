@@ -1,4 +1,4 @@
-package org.kutsuki.matchaserver.model;
+package org.kutsuki.matchaserver.portfolio;
 
 public enum OptionType {
     CALL, PUT;

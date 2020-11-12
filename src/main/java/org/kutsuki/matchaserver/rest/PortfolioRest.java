@@ -11,10 +11,8 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 import javax.annotation.PostConstruct;
 
@@ -22,10 +20,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.kutsuki.matchaserver.EmailManager;
 import org.kutsuki.matchaserver.document.Alert;
 import org.kutsuki.matchaserver.document.Position;
-import org.kutsuki.matchaserver.model.OptionType;
-import org.kutsuki.matchaserver.model.OrderModel;
+import org.kutsuki.matchaserver.portfolio.OptionType;
+import org.kutsuki.matchaserver.portfolio.OrderModel;
+import org.kutsuki.matchaserver.portfolio.PortfolioManager;
 import org.kutsuki.matchaserver.repository.AlertRepository;
-import org.kutsuki.matchaserver.repository.PortfolioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -41,16 +39,12 @@ public class PortfolioRest {
     private static final String BACKRATIO = "BACKRATIO";
     private static final String BOT = "BOT ";
     private static final String BUY = "BUY ";
-    private static final String BUY_TO_CLOSE = "BUY_TO_CLOSE";
-    private static final String BUY_TO_OPEN = "BUY_TO_OPEN";
     private static final String BUTTERFLY = "BUTTERFLY";
     private static final String CONDOR = "CONDOR";
     private static final String HUNDRED = "100";
     private static final String IRON_CONDOR = "IRON CONDOR";
     private static final String NEW = "NEW";
     private static final String SELL = "SELL ";
-    private static final String SELL_TO_CLOSE = "SELL_TO_CLOSE";
-    private static final String SELL_TO_OPEN = "SELL_TO_OPEN";
     private static final String SOLD = "SOLD ";
     private static final String ST_WEEKLY = "ST Weekly";
     private static final String WEEKLYS = "(Weeklys)";
@@ -59,30 +53,20 @@ public class PortfolioRest {
     private static final String VERTICAL = "VERTICAL";
     private static final String UNBALANCED_BUTTERFLY = "~BUTTERFLY";
 
-    @Autowired
-    private AlertRepository alertRepository;
+    private Alert lastAlert;
 
     @Autowired
-    private PortfolioRepository repository;
+    private PortfolioManager manager;
+
+    @Autowired
+    private AlertRepository alertRepository;
 
     @Value("${email.portfolio}")
     private String emailPortfolio;
 
-    private Alert lastAlert;
-    private List<Position> deleteList;
-    private List<Position> saveList;
-    private Map<String, Position> portfolioMap;
-
     @PostConstruct
     public void postConstruct() {
-	this.deleteList = new ArrayList<Position>();
-	this.saveList = new ArrayList<Position>();
 	this.lastAlert = new Alert();
-	this.portfolioMap = new HashMap<String, Position>();
-
-	for (Position position : repository.findAll()) {
-	    this.portfolioMap.put(position.getFullSymbol(), position);
-	}
 
 	if (alertRepository.count() > 0) {
 	    this.lastAlert = alertRepository.findAll().get(0);
@@ -96,11 +80,7 @@ public class PortfolioRest {
 
     @GetMapping("/rest/portfolio/reloadCache")
     public ResponseEntity<String> reloadCache() {
-	portfolioMap.clear();
-
-	for (Position position : repository.findAll()) {
-	    portfolioMap.put(position.getFullSymbol(), position);
-	}
+	manager.reloadCache();
 
 	// return finished
 	return ResponseEntity.ok().build();
@@ -121,8 +101,7 @@ public class PortfolioRest {
 	    try {
 		StringBuilder subject = new StringBuilder();
 		StringBuilder body = new StringBuilder();
-		deleteList.clear();
-		saveList.clear();
+		manager.clear();
 
 		String escaped = URLDecoder.decode(uriAlert, StandardCharsets.UTF_8.toString());
 		body.append(escaped);
@@ -147,7 +126,7 @@ public class PortfolioRest {
 		    boolean first = true;
 
 		    List<OrderModel> orderList = createOrder(escaped);
-		    String portfolio = getPortfolio(orderList, working);
+		    String portfolio = manager.getPortfolio(orderList, working);
 		    for (OrderModel order : orderList) {
 			if (!first) {
 			    subject.append(StringUtils.SPACE);
@@ -184,11 +163,11 @@ public class PortfolioRest {
 		    subject.append(ST_WEEKLY);
 		    subject.append(StringUtils.SPACE);
 		    subject.append(LocalTime.now().format(TIME_FORMATTER));
-		    body.append(getPortfolio(Collections.emptyList(), false));
+		    body.append(manager.getPortfolio(Collections.emptyList(), false));
 		}
 
 		EmailManager.email(emailPortfolio, subject.toString(), body.toString());
-		resolveRepo();
+		manager.resolveRepo();
 	    } catch (UnsupportedEncodingException e) {
 		EmailManager.emailException(uriAlert, e);
 	    }
@@ -241,79 +220,6 @@ public class PortfolioRest {
 	}
 
 	return orderList;
-    }
-
-    private String getPortfolio(List<OrderModel> orderList, boolean working) {
-	LocalDate now = LocalDate.now();
-	for (Position position : portfolioMap.values()) {
-	    if (now.isAfter(position.getExpiry())) {
-		deleteList.add(position);
-	    }
-	}
-
-	for (Position position : deleteList) {
-	    portfolioMap.remove(position.getFullSymbol());
-	}
-
-	for (OrderModel order : orderList) {
-	    for (Position orderEntry : order.getPositionList()) {
-		Position position = portfolioMap.get(orderEntry.getFullSymbol());
-		if (position != null) {
-		    int qty = position.getQuantity() + orderEntry.getQuantity();
-
-		    if (qty == 0) {
-			if (orderEntry.getQuantity() > 0) {
-			    orderEntry.setSide(BUY_TO_CLOSE);
-			} else {
-			    orderEntry.setSide(SELL_TO_CLOSE);
-			}
-		    } else {
-			if (orderEntry.getQuantity() > 0) {
-			    orderEntry.setSide(BUY_TO_OPEN);
-			} else {
-			    orderEntry.setSide(SELL_TO_OPEN);
-			}
-		    }
-
-		    if (!working) {
-			position.setQuantity(qty);
-			portfolioMap.put(position.getFullSymbol(), position);
-			saveList.add(position);
-		    }
-		} else {
-		    if (orderEntry.getQuantity() > 0) {
-			orderEntry.setSide(BUY_TO_OPEN);
-		    } else {
-			orderEntry.setSide(SELL_TO_OPEN);
-		    }
-
-		    if (!working) {
-			portfolioMap.put(orderEntry.getFullSymbol(), orderEntry);
-			saveList.add(orderEntry);
-		    }
-		}
-	    }
-	}
-
-	StringBuilder sb = new StringBuilder();
-	sb.append(EmailManager.NEW_LINE);
-	sb.append(EmailManager.NEW_LINE);
-	sb.append("<b>[PORTFOLIO]</b>");
-
-	List<Position> portfolio = new ArrayList<Position>(portfolioMap.values());
-	Collections.sort(portfolio);
-	String symbol = StringUtils.EMPTY;
-	for (Position position : portfolio) {
-	    if (!symbol.equals(position.getSymbol())) {
-		symbol = position.getSymbol();
-		sb.append(EmailManager.NEW_LINE);
-	    }
-
-	    sb.append(position.getStatement());
-	    sb.append(EmailManager.NEW_LINE);
-	}
-
-	return sb.toString();
     }
 
     private OrderModel backratio(String[] split) throws Exception {
@@ -586,10 +492,5 @@ public class PortfolioRest {
 	}
 
 	return slashList;
-    }
-
-    private void resolveRepo() {
-	repository.deleteAll(deleteList);
-	repository.saveAll(saveList);
     }
 }
