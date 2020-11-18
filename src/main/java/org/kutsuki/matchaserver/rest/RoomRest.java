@@ -377,7 +377,7 @@ public class RoomRest extends AbstractDateTimeRest {
 	    }
 
 	    if (hotel == null) {
-		EmailManager.emailHome("Unable to Find Hotel!", link);
+		EmailManager.email("Unable to Find Hotel!", link);
 	    }
 	} catch (DateTimeParseException | UnsupportedEncodingException e) {
 	    EmailManager.emailException("Exception thrown while parsing: " + href, e);

@@ -54,6 +54,7 @@ public class PortfolioRest {
     private static final String WORKING_EXPLAINATION = " - This trade has not been filled!";
     private static final String VERTICAL = "VERTICAL";
     private static final String UNBALANCED_BUTTERFLY = "~BUTTERFLY";
+    private static final String UNOFFICIAL = "Unofficial:";
 
     private Alert lastAlert;
     private List<Position> deleteList;
@@ -100,16 +101,7 @@ public class PortfolioRest {
     }
 
     @GetMapping("/rest/portfolio/uploadAlert")
-    public ResponseEntity<String> uploadAlert(@RequestParam("id") String uriId,
-	    @RequestParam("alert") String uriAlert) {
-	String id = lastAlert.getAlertId();
-
-	try {
-	    id = URLDecoder.decode(uriId, StandardCharsets.UTF_8.toString());
-	} catch (UnsupportedEncodingException e) {
-	    EmailManager.emailException(uriId, e);
-	}
-
+    public ResponseEntity<String> uploadAlert(@RequestParam("id") String id, @RequestParam("alert") String uriAlert) {
 	if (!StringUtils.equalsIgnoreCase(id, lastAlert.getAlertId())) {
 	    try {
 		StringBuilder subject = new StringBuilder();
@@ -120,8 +112,10 @@ public class PortfolioRest {
 		String escaped = URLDecoder.decode(uriAlert, StandardCharsets.UTF_8.toString());
 		body.append(escaped);
 
-		if (StringUtils.startsWith(body, Character.toString('#'))) {
+		if (StringUtils.startsWith(body, Character.toString('#'))
+			|| StringUtils.startsWithIgnoreCase(body, UNOFFICIAL)) {
 		    boolean working = false;
+		    boolean unofficial = false;
 		    subject.append(StringUtils.substringBefore(escaped, StringUtils.SPACE));
 		    body.append(EmailManager.NEW_LINE);
 		    body.append(EmailManager.NEW_LINE);
@@ -137,10 +131,14 @@ public class PortfolioRest {
 			working = true;
 		    }
 
+		    if (StringUtils.startsWithIgnoreCase(escaped, UNOFFICIAL)) {
+			unofficial = true;
+		    }
+
 		    boolean first = true;
 
 		    List<OrderModel> orderList = createOrder(escaped);
-		    String portfolio = getPortfolio(orderList, working);
+		    String portfolio = getPortfolio(orderList, working || unofficial);
 		    for (OrderModel order : orderList) {
 			if (!first) {
 			    subject.append(StringUtils.SPACE);

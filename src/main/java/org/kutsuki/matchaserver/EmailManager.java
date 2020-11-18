@@ -61,7 +61,7 @@ public class EmailManager {
     }
 
     // email Home
-    public static boolean emailHome(String subject, String body) {
+    public static boolean email(String subject, String body) {
 	return email(fromMatcha, null, subject, body, null);
     }
 
@@ -131,7 +131,7 @@ public class EmailManager {
 	    sb.append(NEW_LINE);
 	}
 
-	return emailHome(EXCEPTION_SUBJECT, sb.toString());
+	return email(EXCEPTION_SUBJECT, sb.toString());
     }
 
     // sendMessage

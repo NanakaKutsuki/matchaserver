@@ -211,7 +211,7 @@ public class HotelRest extends AbstractDateTimeRest {
 		sb.append(EmailManager.NEW_LINE);
 	    }
 
-	    EmailManager.emailHome(now() + " Unfinished Hotels!", sb.toString());
+	    EmailManager.email(now() + " Unfinished Hotels!", sb.toString());
 	}
 
 	hotelList.clear();
@@ -236,14 +236,14 @@ public class HotelRest extends AbstractDateTimeRest {
     @Scheduled(cron = "0 0 0,11-23 * * *")
     public void checkLastRuntime() {
 	if (now().isAfter(MatchaTracker.LAST_RUNTIME.plusHours(1))) {
-	    EmailManager.emailHome("Check Scraper Box", "Last Runtime: " + MatchaTracker.LAST_RUNTIME);
+	    EmailManager.email("Check Scraper Box", "Last Runtime: " + MatchaTracker.LAST_RUNTIME);
 	}
     }
 
     @Scheduled(cron = "0 * * * * *")
     public void checkScraper() {
 	if (!sent && LocalDateTime.now().isAfter(heartbeat.plusMinutes(5))) {
-	    EmailManager.emailHome("Check Scraper Box", "Last Heartbeat: " + heartbeat);
+	    EmailManager.email("Check Scraper Box", "Last Heartbeat: " + heartbeat);
 	    sent = true;
 	}
     }
