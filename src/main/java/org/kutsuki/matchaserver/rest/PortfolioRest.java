@@ -19,7 +19,6 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 
 import org.apache.commons.lang3.StringUtils;
-import org.kutsuki.matchaserver.EmailManager;
 import org.kutsuki.matchaserver.document.Alert;
 import org.kutsuki.matchaserver.document.Position;
 import org.kutsuki.matchaserver.model.OptionType;
@@ -34,11 +33,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class PortfolioRest {
+public class PortfolioRest extends AbstractRest {
     private static final DateTimeFormatter FORMATTER = new DateTimeFormatterBuilder().parseCaseInsensitive()
 	    .appendPattern("d MMM yy").toFormatter(Locale.ENGLISH);
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("h:mma");
     private static final String BACKRATIO = "BACKRATIO";
+    private static final String BOLD = "<b>";
+    private static final String BOLD_CLOSE = "</b>";
     private static final String BOT = "BOT ";
     private static final String BUY = "BUY ";
     private static final String BUTTERFLY = "BUTTERFLY";
@@ -46,6 +47,7 @@ public class PortfolioRest {
     private static final String HUNDRED = "100";
     private static final String IRON_CONDOR = "IRON CONDOR";
     private static final String NEW = "NEW";
+    private static final String PORTFOLIO = "[PORTFOLIO]";
     private static final String SELL = "SELL ";
     private static final String SOLD = "SOLD ";
     private static final String ST_WEEKLY = "ST Weekly";
@@ -109,16 +111,18 @@ public class PortfolioRest {
 		deleteList.clear();
 		saveList.clear();
 
+		// decode URI Alert
 		String escaped = URLDecoder.decode(uriAlert, StandardCharsets.UTF_8.toString());
 		body.append(escaped);
 
+		// only # and unofficial have orders
 		if (StringUtils.startsWith(body, Character.toString('#'))
 			|| StringUtils.startsWithIgnoreCase(body, UNOFFICIAL)) {
 		    boolean working = false;
 		    boolean unofficial = false;
 		    subject.append(StringUtils.substringBefore(escaped, StringUtils.SPACE));
-		    body.append(EmailManager.NEW_LINE);
-		    body.append(EmailManager.NEW_LINE);
+		    body.append(getLineBreak());
+		    body.append(getLineBreak());
 
 		    if (StringUtils.containsIgnoreCase(escaped, NEW)) {
 			subject.append(StringUtils.SPACE);
@@ -136,15 +140,15 @@ public class PortfolioRest {
 		    }
 
 		    boolean first = true;
-
 		    List<OrderModel> orderList = createOrder(escaped);
 		    String portfolio = getPortfolio(orderList, working || unofficial);
 		    for (OrderModel order : orderList) {
 			if (!first) {
+			    // only for seperate orders
 			    subject.append(StringUtils.SPACE);
 			    subject.append('&');
 			    body.append("--------------------------------------------------");
-			    body.append(EmailManager.NEW_LINE);
+			    body.append(getLineBreak());
 			}
 
 			subject.append(StringUtils.SPACE);
@@ -152,6 +156,7 @@ public class PortfolioRest {
 			subject.append(StringUtils.SPACE);
 			subject.append(order.getSpread());
 
+			// add working
 			if (working) {
 			    body.append(WORKING);
 			    body.append(StringUtils.SPACE);
@@ -160,13 +165,37 @@ public class PortfolioRest {
 			    body.append(WORKING);
 			    body.append(StringUtils.SPACE);
 			    body.append(WORKING_EXPLAINATION);
-			    body.append(EmailManager.NEW_LINE);
-			    body.append(EmailManager.NEW_LINE);
+			    body.append(getLineBreak());
+			    body.append(getLineBreak());
 			}
 
-			body.append(order);
+			// append order
+			body.append(BOLD);
+			body.append(order.getSymbol());
+			body.append(StringUtils.SPACE);
+			body.append(order.getSpread());
+			body.append(StringUtils.SPACE);
+			body.append(order.getPrice());
+			body.append(BOLD_CLOSE);
+			body.append(getLineBreak());
+
+			// append order positions
+			for (Position position : order.getPositionList()) {
+			    body.append(position.getOrder());
+
+			    if (StringUtils.equals(order.getSpread(), OptionType.CALL.toString())
+				    || StringUtils.equals(order.getSpread(), OptionType.PUT.toString())) {
+				body.append(StringUtils.SPACE);
+				body.append(order.getPriceBD());
+			    }
+
+			    body.append(getLineBreak());
+			}
+
 			first = false;
 		    }
+
+		    // append portfolio
 		    body.append(portfolio);
 
 		    subject.append(StringUtils.SPACE);
@@ -178,13 +207,17 @@ public class PortfolioRest {
 		    body.append(getPortfolio(Collections.emptyList(), false));
 		}
 
-		EmailManager.email(emailPortfolio, subject.toString(), body.toString());
+		// email alert
+		email(emailPortfolio, subject.toString(), body.toString());
+
+		// update portfolio
 		repository.deleteAll(deleteList);
 		repository.saveAll(saveList);
 	    } catch (UnsupportedEncodingException e) {
-		EmailManager.emailException(uriAlert, e);
+		emailException(uriAlert, e);
 	    }
 
+	    // update alert id
 	    lastAlert.setAlertId(id);
 	    alertRepository.save(lastAlert);
 	}
@@ -228,7 +261,7 @@ public class PortfolioRest {
 		    }
 		}
 	    } catch (Exception e) {
-		EmailManager.emailException("Error parsing text", e);
+		emailException("Error parsing text", e);
 	    }
 	}
 
@@ -280,9 +313,11 @@ public class PortfolioRest {
 	}
 
 	StringBuilder sb = new StringBuilder();
-	sb.append(EmailManager.NEW_LINE);
-	sb.append(EmailManager.NEW_LINE);
-	sb.append("<b>[PORTFOLIO]</b>");
+	sb.append(getLineBreak());
+	sb.append(getLineBreak());
+	sb.append(BOLD);
+	sb.append(PORTFOLIO);
+	sb.append(BOLD_CLOSE);
 
 	List<Position> portfolio = new ArrayList<Position>(portfolioMap.values());
 	Collections.sort(portfolio);
@@ -290,11 +325,11 @@ public class PortfolioRest {
 	for (Position position : portfolio) {
 	    if (!symbol.equals(position.getSymbol())) {
 		symbol = position.getSymbol();
-		sb.append(EmailManager.NEW_LINE);
+		sb.append(getLineBreak());
 	    }
 
 	    sb.append(position.getStatement());
-	    sb.append(EmailManager.NEW_LINE);
+	    sb.append(getLineBreak());
 	}
 
 	return sb.toString();

@@ -17,6 +17,13 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @SpringBootApplication
 @EnableScheduling
 public class MatchaServerApplication {
+    private static final String CONFIDENTIAL = "CONFIDENTIAL";
+    private static final String CONNECTOR = "org.apache.coyote.http11.Http11NioProtocol";
+    private static final String GET = "GET";
+    private static final String HTTP = "http";
+    private static final String MAPPING = "/**";
+    private static final String PATTERN = "/*";
+
     @Value("${local.port}")
     private int port;
 
@@ -36,9 +43,9 @@ public class MatchaServerApplication {
 	    @Override
 	    protected void postProcessContext(Context context) {
 		SecurityConstraint securityConstraint = new SecurityConstraint();
-		securityConstraint.setUserConstraint("CONFIDENTIAL");
+		securityConstraint.setUserConstraint(CONFIDENTIAL);
 		SecurityCollection collection = new SecurityCollection();
-		collection.addPattern("/*");
+		collection.addPattern(PATTERN);
 		securityConstraint.addCollection(collection);
 		context.addConstraint(securityConstraint);
 	    }
@@ -53,14 +60,14 @@ public class MatchaServerApplication {
 	return new WebMvcConfigurer() {
 	    @Override
 	    public void addCorsMappings(CorsRegistry registry) {
-		registry.addMapping("/**").allowedOrigins(allowedOrigins).allowedMethods("GET");
+		registry.addMapping(MAPPING).allowedOrigins(allowedOrigins).allowedMethods(GET);
 	    }
 	};
     }
 
     private Connector redirectConnector() {
-	Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
-	connector.setScheme("http");
+	Connector connector = new Connector(CONNECTOR);
+	connector.setScheme(HTTP);
 	connector.setPort(port);
 	connector.setSecure(false);
 	connector.setRedirectPort(redirectPort);

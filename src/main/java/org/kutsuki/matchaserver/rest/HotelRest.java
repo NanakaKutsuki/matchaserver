@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
-import org.kutsuki.matchaserver.EmailManager;
 import org.kutsuki.matchaserver.MatchaTracker;
 import org.kutsuki.matchaserver.document.Hotel;
 import org.kutsuki.matchaserver.repository.HotelRepository;
@@ -199,8 +198,8 @@ public class HotelRest extends AbstractDateTimeRest {
 	if (!MatchaTracker.UNFINISHED_MAP.isEmpty()) {
 	    StringBuilder sb = new StringBuilder();
 	    sb.append("Check Scraper!!!");
-	    sb.append(EmailManager.NEW_LINE);
-	    sb.append(EmailManager.NEW_LINE);
+	    sb.append(getLineBreak());
+	    sb.append(getLineBreak());
 
 	    for (Hotel hotel : MatchaTracker.UNFINISHED_MAP.values()) {
 		sb.append(hotel.getName());
@@ -208,10 +207,10 @@ public class HotelRest extends AbstractDateTimeRest {
 		sb.append(hotel.getId());
 		sb.append(StringUtils.SPACE);
 		sb.append(hotel.getNextRuntime());
-		sb.append(EmailManager.NEW_LINE);
+		sb.append(getLineBreak());
 	    }
 
-	    EmailManager.email(now() + " Unfinished Hotels!", sb.toString());
+	    email(now() + " Unfinished Hotels!", sb.toString());
 	}
 
 	hotelList.clear();
@@ -236,14 +235,14 @@ public class HotelRest extends AbstractDateTimeRest {
     @Scheduled(cron = "0 0 0,11-23 * * *")
     public void checkLastRuntime() {
 	if (now().isAfter(MatchaTracker.LAST_RUNTIME.plusHours(1))) {
-	    EmailManager.email("Check Scraper Box", "Last Runtime: " + MatchaTracker.LAST_RUNTIME);
+	    email("Check Scraper Box", "Last Runtime: " + MatchaTracker.LAST_RUNTIME);
 	}
     }
 
     @Scheduled(cron = "0 * * * * *")
     public void checkScraper() {
 	if (!sent && LocalDateTime.now().isAfter(heartbeat.plusMinutes(5))) {
-	    EmailManager.email("Check Scraper Box", "Last Heartbeat: " + heartbeat);
+	    email("Check Scraper Box", "Last Heartbeat: " + heartbeat);
 	    sent = true;
 	}
     }

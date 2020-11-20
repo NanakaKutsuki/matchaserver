@@ -7,7 +7,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.Date;
 
-public abstract class AbstractDateTimeRest {
+public abstract class AbstractDateTimeRest extends AbstractRest {
     private static final ZoneId MST = ZoneId.of("America/Denver");
 
     // now
