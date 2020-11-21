@@ -34,21 +34,22 @@ public class AbstractRest {
 
     // email
     public void email(String bcc, String subject, String htmlBody) {
-	email(matcha, bcc, subject, htmlBody, null);
+	email(matcha, bcc, subject, htmlBody, null, false);
     }
 
     // email with attachments
     public void emailAttachment(String bcc, String subject, String htmlBody, List<String> attachments) {
-	email(matcha, bcc, subject, htmlBody, attachments);
+	email(matcha, bcc, subject, htmlBody, attachments, false);
     }
 
     // emailHome
     public void email(String subject, String htmlBody) {
-	email(matcha, null, subject, htmlBody, null);
+	email(matcha, null, subject, htmlBody, null, false);
     }
 
     // email
-    public void email(String from, String bcc, String subject, String htmlBody, List<String> attachments) {
+    public void email(String from, String bcc, String subject, String htmlBody, List<String> attachments,
+	    boolean noRetry) {
 	try {
 	    MimeMessage msg = javaMailSender.createMimeMessage();
 	    MimeMessageHelper helper = new MimeMessageHelper(msg, true);
@@ -58,7 +59,7 @@ public class AbstractRest {
 	    helper.setText(htmlBody, true);
 
 	    if (bcc != null) {
-		helper.setBcc(bcc);
+		helper.setBcc(StringUtils.split(bcc, ','));
 	    }
 
 	    if (attachments != null) {
@@ -72,7 +73,6 @@ public class AbstractRest {
 	} catch (MessagingException e) {
 	    LOGGER.error("Error trying to Email: " + htmlBody, e);
 	}
-
     }
 
     // emailException

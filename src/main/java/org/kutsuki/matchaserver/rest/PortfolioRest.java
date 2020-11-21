@@ -102,6 +102,37 @@ public class PortfolioRest extends AbstractRest {
 	return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/rest/portfolio/updateQty")
+    public List<String> updateQty(@RequestParam("symbol") String symbol, @RequestParam("qty") String qty) {
+	List<String> result = new ArrayList<String>();
+
+	if (StringUtils.isNotBlank(symbol)) {
+	    Position position = portfolioMap.get(symbol);
+	    if (position != null) {
+		try {
+		    position.setQuantity(Integer.parseInt(qty));
+		    portfolioMap.put(position.getFullSymbol(), position);
+		    repository.save(position);
+		} catch (NumberFormatException e) {
+		    emailException("Error updating qty: " + symbol + StringUtils.SPACE + qty, e);
+		}
+	    }
+
+	    result.add(position.toString());
+	} else {
+	    result.addAll(portfolioMap.keySet());
+	}
+
+	return result;
+    }
+
+    @GetMapping("/rest/portfolio/updateAlertId")
+    public ResponseEntity<String> updateAlertId(@RequestParam("id") String id) {
+	lastAlert.setAlertId(id);
+	alertRepository.save(lastAlert);
+	return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/rest/portfolio/uploadAlert")
     public ResponseEntity<String> uploadAlert(@RequestParam("id") String id, @RequestParam("alert") String uriAlert) {
 	if (!StringUtils.equalsIgnoreCase(id, lastAlert.getAlertId())) {
@@ -218,8 +249,7 @@ public class PortfolioRest extends AbstractRest {
 	    }
 
 	    // update alert id
-	    lastAlert.setAlertId(id);
-	    alertRepository.save(lastAlert);
+	    updateAlertId(id);
 	}
 
 	// return finished
