@@ -317,7 +317,7 @@ public class RoomRest extends AbstractDateTimeRest {
 	sb.append(room.getCityName()).append(getLineBreak());
 	sb.append("Checking in ").append(MMMM_DD_YYYY.format(room.getZonedDateTime())).append(getLineBreak());
 	sb.append("Previous Rate: ").append(CURRENCY.format(prev)).append(getLineBreak());
-	sb.append("Current Rate: ").append(CURRENCY.format(room.getRate()));
+	sb.append("Current Rate: ").append(CURRENCY.format(room.getRate())).append(getLineBreak());
 	sb.append("Generated: ").append(now());
 
 	email(to, subject, sb.toString());
