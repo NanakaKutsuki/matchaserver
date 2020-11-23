@@ -1,6 +1,5 @@
 package org.kutsuki.matchaserver.rest;
 
-import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -244,7 +243,7 @@ public class PortfolioRest extends AbstractRest {
 		// update portfolio
 		repository.deleteAll(deleteList);
 		repository.saveAll(saveList);
-	    } catch (UnsupportedEncodingException e) {
+	    } catch (Exception e) {
 		emailException(uriAlert, e);
 	    }
 
