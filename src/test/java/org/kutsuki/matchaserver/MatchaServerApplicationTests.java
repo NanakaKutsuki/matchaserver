@@ -2,14 +2,14 @@ package org.kutsuki.matchaserver;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.kutsuki.matchaserver.repository.PortfolioRepository;
+import org.kutsuki.matchaserver.repository.HotelRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
 public class MatchaServerApplicationTests {
     @Autowired
-    private PortfolioRepository repository;
+    private HotelRepository repository;
 
     @Test
     public void contextLoads() {
