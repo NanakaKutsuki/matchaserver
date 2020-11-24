@@ -5,11 +5,13 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
+import javax.annotation.PostConstruct;
+
 import org.apache.commons.lang3.StringUtils;
+import org.kutsuki.matchaserver.EmailService;
 import org.kutsuki.matchaserver.MatchaTracker;
 import org.kutsuki.matchaserver.document.Hotel;
 import org.kutsuki.matchaserver.repository.HotelRepository;
@@ -35,7 +37,6 @@ public class HotelRest extends AbstractDateTimeRest {
     private static final String CPT = "&aCategoryRange=0,1,2,3,4,5&aOverallLiking=1,2,3,4,5&sOrderBy=relevance%20desc&bTopDealsOnly=false&iRoomType=7&cpt=";
     private static final String FOOTER = "&iIncludeAll=0&iViewType=0&bIsSeoPage=false&bIsSitemap=false&";
 
-    private boolean restart;
     private boolean sent;
     private List<String> hotelList;
     private LocalDateTime heartbeat;
@@ -44,11 +45,14 @@ public class HotelRest extends AbstractDateTimeRest {
     @Autowired
     private HotelRepository repository;
 
-    public HotelRest() {
+    @Autowired
+    private EmailService service;
+
+    @PostConstruct
+    public void postConstruct() {
 	this.heartbeat = LocalDateTime.now();
 	this.hotelList = new ArrayList<String>();
 	this.lastCompleted = now();
-	this.restart = false;
 	this.sent = false;
     }
 
@@ -123,26 +127,10 @@ public class HotelRest extends AbstractDateTimeRest {
 	return getLink(hotel);
     }
 
-    @GetMapping("/rest/hotel/isRestart")
-    public Boolean isRestart() {
-	boolean result = restart;
-
-	if (now().toLocalTime().isAfter(MatchaTracker.LAST_RUNTIME.toLocalTime().plusMinutes(3))) {
-	    Iterator<Hotel> itr = MatchaTracker.UNFINISHED_MAP.values().iterator();
-	    while (!restart && itr.hasNext()) {
-		if (itr.next().getRetries() < MAX_RETRIES) {
-		    restart = true;
-		}
-	    }
-	}
-
-	if (restart) {
-	    this.restart = false;
-	}
-
-	heartbeat = LocalDateTime.now();
-	sent = false;
-	return result;
+    @GetMapping("/rest/hotel/heartbeat")
+    public ResponseEntity<String> heartbeat() {
+	this.heartbeat = LocalDateTime.now();
+	return ResponseEntity.ok().build();
     }
 
     @GetMapping("/rest/hotel/reloadHotel")
@@ -183,14 +171,6 @@ public class HotelRest extends AbstractDateTimeRest {
 	return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/rest/hotel/restart")
-    public ResponseEntity<String> restart() {
-	this.restart = true;
-
-	// return finished
-	return ResponseEntity.ok().build();
-    }
-
     @Scheduled(cron = "0 0 0,11-23 * * *")
     public void refreshHotels() {
 	ZonedDateTime now = now();
@@ -198,8 +178,8 @@ public class HotelRest extends AbstractDateTimeRest {
 	if (!MatchaTracker.UNFINISHED_MAP.isEmpty()) {
 	    StringBuilder sb = new StringBuilder();
 	    sb.append("Check Scraper!!!");
-	    sb.append(getLineBreak());
-	    sb.append(getLineBreak());
+	    sb.append(service.getLineBreak());
+	    sb.append(service.getLineBreak());
 
 	    for (Hotel hotel : MatchaTracker.UNFINISHED_MAP.values()) {
 		sb.append(hotel.getName());
@@ -207,10 +187,10 @@ public class HotelRest extends AbstractDateTimeRest {
 		sb.append(hotel.getId());
 		sb.append(StringUtils.SPACE);
 		sb.append(hotel.getNextRuntime());
-		sb.append(getLineBreak());
+		sb.append(service.getLineBreak());
 	    }
 
-	    email(now() + " Unfinished Hotels!", sb.toString());
+	    service.email(now() + " Unfinished Hotels!", sb.toString());
 	}
 
 	hotelList.clear();
@@ -235,14 +215,14 @@ public class HotelRest extends AbstractDateTimeRest {
     @Scheduled(cron = "0 0 0,11-23 * * *")
     public void checkLastRuntime() {
 	if (now().isAfter(MatchaTracker.LAST_RUNTIME.plusHours(1))) {
-	    email("Check Scraper Box", "Last Runtime: " + MatchaTracker.LAST_RUNTIME);
+	    service.email("Check Scraper Box", "Last Runtime: " + MatchaTracker.LAST_RUNTIME);
 	}
     }
 
     @Scheduled(cron = "0 * * * * *")
     public void checkScraper() {
 	if (!sent && LocalDateTime.now().isAfter(heartbeat.plusMinutes(5))) {
-	    email("Check Scraper Box", "Last Heartbeat: " + heartbeat);
+	    service.email("Check Scraper Box", "Last Heartbeat: " + heartbeat);
 	    sent = true;
 	}
     }

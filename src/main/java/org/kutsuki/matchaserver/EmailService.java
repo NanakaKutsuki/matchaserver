@@ -1,7 +1,4 @@
-package org.kutsuki.matchaserver.rest;
-
-import java.io.File;
-import java.util.List;
+package org.kutsuki.matchaserver;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
@@ -11,14 +8,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
 
 @Component
-public class AbstractRest {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractRest.class);
+public class EmailService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(EmailService.class);
     private static final String EMSP = "&emsp;";
     private static final String EXCEPTION_SUBJECT = "Exception Thrown";
     private static final String LINE_BREAK = "<br/>";
@@ -34,22 +30,16 @@ public class AbstractRest {
 
     // email
     public void email(String bcc, String subject, String htmlBody) {
-	email(matcha, bcc, subject, htmlBody, null, false);
-    }
-
-    // email with attachments
-    public void emailAttachment(String bcc, String subject, String htmlBody, List<String> attachments) {
-	email(matcha, bcc, subject, htmlBody, attachments, false);
+	email(matcha, bcc, subject, htmlBody);
     }
 
     // emailHome
     public void email(String subject, String htmlBody) {
-	email(matcha, null, subject, htmlBody, null, false);
+	email(matcha, null, subject, htmlBody);
     }
 
     // email
-    public void email(String from, String bcc, String subject, String htmlBody, List<String> attachments,
-	    boolean noRetry) {
+    public void email(String from, String bcc, String subject, String htmlBody) {
 	try {
 	    MimeMessage msg = javaMailSender.createMimeMessage();
 	    MimeMessageHelper helper = new MimeMessageHelper(msg, true);
@@ -60,13 +50,6 @@ public class AbstractRest {
 
 	    if (bcc != null) {
 		helper.setBcc(StringUtils.split(bcc, ','));
-	    }
-
-	    if (attachments != null) {
-		for (String path : attachments) {
-		    File file = new File(path);
-		    helper.addAttachment(file.getName(), new FileSystemResource(file));
-		}
 	    }
 
 	    javaMailSender.send(msg);

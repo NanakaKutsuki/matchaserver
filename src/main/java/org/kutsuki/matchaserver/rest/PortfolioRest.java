@@ -18,6 +18,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 
 import org.apache.commons.lang3.StringUtils;
+import org.kutsuki.matchaserver.EmailService;
 import org.kutsuki.matchaserver.document.Alert;
 import org.kutsuki.matchaserver.document.Position;
 import org.kutsuki.matchaserver.model.OptionType;
@@ -32,7 +33,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class PortfolioRest extends AbstractRest {
+public class PortfolioRest {
     private static final DateTimeFormatter FORMATTER = new DateTimeFormatterBuilder().parseCaseInsensitive()
 	    .appendPattern("d MMM yy").toFormatter(Locale.ENGLISH);
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("h:mma");
@@ -67,6 +68,9 @@ public class PortfolioRest extends AbstractRest {
 
     @Autowired
     private PortfolioRepository repository;
+
+    @Autowired
+    private EmailService service;
 
     @Value("${email.portfolio}")
     private String emailPortfolio;
@@ -113,7 +117,7 @@ public class PortfolioRest extends AbstractRest {
 		    portfolioMap.put(position.getFullSymbol(), position);
 		    repository.save(position);
 		} catch (NumberFormatException e) {
-		    emailException("Error updating qty: " + symbol + StringUtils.SPACE + qty, e);
+		    service.emailException("Error updating qty: " + symbol + StringUtils.SPACE + qty, e);
 		}
 	    }
 
@@ -151,8 +155,8 @@ public class PortfolioRest extends AbstractRest {
 		    boolean working = false;
 		    boolean unofficial = false;
 		    subject.append(StringUtils.substringBefore(escaped, StringUtils.SPACE));
-		    body.append(getLineBreak());
-		    body.append(getLineBreak());
+		    body.append(service.getLineBreak());
+		    body.append(service.getLineBreak());
 
 		    if (StringUtils.containsIgnoreCase(escaped, NEW)) {
 			subject.append(StringUtils.SPACE);
@@ -178,7 +182,7 @@ public class PortfolioRest extends AbstractRest {
 			    subject.append(StringUtils.SPACE);
 			    subject.append('&');
 			    body.append("--------------------------------------------------");
-			    body.append(getLineBreak());
+			    body.append(service.getLineBreak());
 			}
 
 			subject.append(StringUtils.SPACE);
@@ -195,8 +199,8 @@ public class PortfolioRest extends AbstractRest {
 			    body.append(WORKING);
 			    body.append(StringUtils.SPACE);
 			    body.append(WORKING_EXPLAINATION);
-			    body.append(getLineBreak());
-			    body.append(getLineBreak());
+			    body.append(service.getLineBreak());
+			    body.append(service.getLineBreak());
 			}
 
 			// append order
@@ -207,7 +211,7 @@ public class PortfolioRest extends AbstractRest {
 			body.append(StringUtils.SPACE);
 			body.append(order.getPrice());
 			body.append(BOLD_CLOSE);
-			body.append(getLineBreak());
+			body.append(service.getLineBreak());
 
 			// append order positions
 			for (Position position : order.getPositionList()) {
@@ -219,7 +223,7 @@ public class PortfolioRest extends AbstractRest {
 				body.append(order.getPriceBD());
 			    }
 
-			    body.append(getLineBreak());
+			    body.append(service.getLineBreak());
 			}
 
 			first = false;
@@ -238,13 +242,13 @@ public class PortfolioRest extends AbstractRest {
 		}
 
 		// email alert
-		email(emailPortfolio, subject.toString(), body.toString());
+		service.email(emailPortfolio, subject.toString(), body.toString());
 
 		// update portfolio
 		repository.deleteAll(deleteList);
 		repository.saveAll(saveList);
 	    } catch (Exception e) {
-		emailException(uriAlert, e);
+		service.emailException(uriAlert, e);
 	    }
 
 	    // update alert id
@@ -290,7 +294,7 @@ public class PortfolioRest extends AbstractRest {
 		    }
 		}
 	    } catch (Exception e) {
-		emailException("Error parsing text", e);
+		service.emailException("Error parsing text", e);
 	    }
 	}
 
@@ -342,8 +346,8 @@ public class PortfolioRest extends AbstractRest {
 	}
 
 	StringBuilder sb = new StringBuilder();
-	sb.append(getLineBreak());
-	sb.append(getLineBreak());
+	sb.append(service.getLineBreak());
+	sb.append(service.getLineBreak());
 	sb.append(BOLD);
 	sb.append(PORTFOLIO);
 	sb.append(BOLD_CLOSE);
@@ -354,11 +358,11 @@ public class PortfolioRest extends AbstractRest {
 	for (Position position : portfolio) {
 	    if (!symbol.equals(position.getSymbol())) {
 		symbol = position.getSymbol();
-		sb.append(getLineBreak());
+		sb.append(service.getLineBreak());
 	    }
 
 	    sb.append(position.getStatement());
-	    sb.append(getLineBreak());
+	    sb.append(service.getLineBreak());
 	}
 
 	return sb.toString();

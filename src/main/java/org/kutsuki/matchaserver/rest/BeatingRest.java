@@ -17,6 +17,7 @@ import java.util.TreeMap;
 import javax.annotation.PostConstruct;
 
 import org.apache.commons.lang3.StringUtils;
+import org.kutsuki.matchaserver.EmailService;
 import org.kutsuki.matchaserver.beating.BeatingBiggest;
 import org.kutsuki.matchaserver.beating.BeatingCount;
 import org.kutsuki.matchaserver.beating.BeatingResult;
@@ -31,12 +32,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 @CrossOrigin
 @RestController
-public class BeatingRest extends AbstractRest {
+public class BeatingRest {
     private static final BigDecimal FANCY = new BigDecimal(65);
     private static final BigDecimal HUNDRED = new BigDecimal(100);
 
     @Autowired
     private BeatingRepository repository;
+
+    @Autowired
+    private EmailService service;
 
     private BeatingBiggest biggest;
     private List<Beating> beatingList;
@@ -48,14 +52,10 @@ public class BeatingRest extends AbstractRest {
     private int maxLoseStreak;
     private int nextId;
 
-    // constructor
-    public BeatingRest() {
-	this.placeList = new ArrayList<String>();
-	this.playerList = new ArrayList<String>();
-    }
-
     @PostConstruct
     public void postConstruct() {
+	this.placeList = new ArrayList<String>();
+	this.playerList = new ArrayList<String>();
 	reloadCache(true);
     }
 
@@ -95,7 +95,7 @@ public class BeatingRest extends AbstractRest {
 		beatingList.add(beating);
 		reloadCache(false);
 	    } catch (DateTimeParseException | NumberFormatException e) {
-		emailException("Error Adding Beating", e);
+		service.emailException("Error Adding Beating", e);
 	    }
 	}
 

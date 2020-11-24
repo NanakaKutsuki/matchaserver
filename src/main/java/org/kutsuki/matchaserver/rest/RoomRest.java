@@ -21,6 +21,7 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import org.apache.commons.lang3.StringUtils;
+import org.kutsuki.matchaserver.EmailService;
 import org.kutsuki.matchaserver.MatchaTracker;
 import org.kutsuki.matchaserver.document.City;
 import org.kutsuki.matchaserver.document.Hotel;
@@ -52,6 +53,9 @@ public class RoomRest extends AbstractDateTimeRest {
 
     @Autowired
     private RoomRepository roomRepository;
+
+    @Autowired
+    private EmailService service;
 
     @GetMapping("/rest/room/getRooms")
     public List<EventModel> getRooms(@RequestParam("cityId") String cityId, @RequestParam("start") String startDate) {
@@ -107,7 +111,7 @@ public class RoomRest extends AbstractDateTimeRest {
 		}
 	    }
 	} catch (DateTimeParseException e) {
-	    emailException("Unable to parse start date while getRooms", e);
+	    service.emailException("Unable to parse start date while getRooms", e);
 	}
 
 	return eventList;
@@ -190,7 +194,7 @@ public class RoomRest extends AbstractDateTimeRest {
 	    }
 	} catch (NumberFormatException e) {
 	    String error = "Error parsing price: " + rate + " for: " + hotel.getName() + " at " + hotel.getLink();
-	    emailException(error, e);
+	    service.emailException(error, e);
 	}
 
 	// return finished
@@ -223,16 +227,16 @@ public class RoomRest extends AbstractDateTimeRest {
 
 	    StringBuilder sb = new StringBuilder();
 	    sb.append("Rates from Last Year:");
-	    sb.append(getLineBreak());
-	    sb.append(getLineBreak());
+	    sb.append(service.getLineBreak());
+	    sb.append(service.getLineBreak());
 
 	    String lastYYYYMMDD = "";
 	    Collections.sort(summaryList);
 	    for (RoomSummaryModel model : summaryList) {
 		if (!model.getYYYYMMDD().equals(lastYYYYMMDD)) {
-		    sb.append(getLineBreak());
+		    sb.append(service.getLineBreak());
 		    sb.append(MMMM_DD_YYYY.format(model.getZonedDateTime()));
-		    sb.append(getLineBreak());
+		    sb.append(service.getLineBreak());
 		    lastYYYYMMDD = model.getYYYYMMDD();
 		}
 
@@ -251,10 +255,10 @@ public class RoomRest extends AbstractDateTimeRest {
 		}
 
 		sb.append(model.getHotelName());
-		sb.append(getLineBreak());
+		sb.append(service.getLineBreak());
 	    }
 
-	    email(city.getEmail(), subject, sb.toString());
+	    service.email(city.getEmail(), subject, sb.toString());
 	}
     }
 
@@ -284,11 +288,11 @@ public class RoomRest extends AbstractDateTimeRest {
 
 		StringBuilder sb = new StringBuilder();
 		sb.append("Rates for Tomorrow: " + MMMM_DD_YYYY.format(startDateTime));
-		sb.append(getLineBreak());
+		sb.append(service.getLineBreak());
 
 		Collections.sort(roomList);
 		for (Room room : roomList) {
-		    sb.append(getLineBreak());
+		    sb.append(service.getLineBreak());
 		    sb.append(CURRENCY.format(room.getRate()));
 
 		    if (room.isSoldOut()) {
@@ -302,7 +306,7 @@ public class RoomRest extends AbstractDateTimeRest {
 		    sb.append(room.getHotelName());
 		}
 
-		email(city.getEmail(), subject.toString(), sb.toString());
+		service.email(city.getEmail(), subject.toString(), sb.toString());
 	    }
 	}
     }
@@ -313,14 +317,14 @@ public class RoomRest extends AbstractDateTimeRest {
 		+ CURRENCY.format(room.getRate());
 
 	StringBuilder sb = new StringBuilder();
-	sb.append(room.getHotelName()).append(getLineBreak());
-	sb.append(room.getCityName()).append(getLineBreak());
-	sb.append("Checking in ").append(MMMM_DD_YYYY.format(room.getZonedDateTime())).append(getLineBreak());
-	sb.append("Previous Rate: ").append(CURRENCY.format(prev)).append(getLineBreak());
-	sb.append("Current Rate: ").append(CURRENCY.format(room.getRate())).append(getLineBreak());
+	sb.append(room.getHotelName()).append(service.getLineBreak());
+	sb.append(room.getCityName()).append(service.getLineBreak());
+	sb.append("Checking in ").append(MMMM_DD_YYYY.format(room.getZonedDateTime())).append(service.getLineBreak());
+	sb.append("Previous Rate: ").append(CURRENCY.format(prev)).append(service.getLineBreak());
+	sb.append("Current Rate: ").append(CURRENCY.format(room.getRate())).append(service.getLineBreak());
 	sb.append("Generated: ").append(now());
 
-	email(to, subject, sb.toString());
+	service.email(to, subject, sb.toString());
     }
 
     // emailSoldOutAlert
@@ -328,16 +332,16 @@ public class RoomRest extends AbstractDateTimeRest {
 	String subject = "Rate Alert: " + room.getHotelName() + " in " + room.getCityName() + " is SOLD OUT!";
 
 	StringBuilder sb = new StringBuilder();
-	sb.append(room.getHotelName()).append(getLineBreak());
-	sb.append(room.getCityName()).append(getLineBreak());
-	sb.append("Checking in ").append(MMMM_DD_YYYY.format(room.getZonedDateTime())).append(getLineBreak());
+	sb.append(room.getHotelName()).append(service.getLineBreak());
+	sb.append(room.getCityName()).append(service.getLineBreak());
+	sb.append("Checking in ").append(MMMM_DD_YYYY.format(room.getZonedDateTime())).append(service.getLineBreak());
 	if (room.getRate().compareTo(BigDecimal.ZERO) > 0) {
-	    sb.append("Previous Rate: ").append(CURRENCY.format(room.getRate())).append(getLineBreak());
+	    sb.append("Previous Rate: ").append(CURRENCY.format(room.getRate())).append(service.getLineBreak());
 	}
-	sb.append("Generated: ").append(now());
+	sb.append("Generated: ").append(now()).append(service.getLineBreak());
 	sb.append("SOLD OUT!!!");
 
-	email(to, subject, sb.toString());
+	service.email(to, subject, sb.toString());
     }
 
     // emailInventoryAlert
@@ -345,16 +349,16 @@ public class RoomRest extends AbstractDateTimeRest {
 	String subject = "Rate Alert: " + room.getHotelName() + " in " + room.getCityName() + " has ADDED INVENTORY!";
 
 	StringBuilder sb = new StringBuilder();
-	sb.append(room.getHotelName()).append(getLineBreak());
-	sb.append(room.getCityName()).append(getLineBreak());
-	sb.append("Checking in ").append(MMMM_DD_YYYY.format(room.getZonedDateTime())).append(getLineBreak());
+	sb.append(room.getHotelName()).append(service.getLineBreak());
+	sb.append(room.getCityName()).append(service.getLineBreak());
+	sb.append("Checking in ").append(MMMM_DD_YYYY.format(room.getZonedDateTime())).append(service.getLineBreak());
 	if (room.getRate().compareTo(BigDecimal.ZERO) > 0) {
-	    sb.append("Previous Rate: ").append(CURRENCY.format(prev)).append(getLineBreak());
+	    sb.append("Previous Rate: ").append(CURRENCY.format(prev)).append(service.getLineBreak());
 	}
 	sb.append("Current Rate: ").append(CURRENCY.format(room.getRate()));
 	sb.append("Generated: ").append(now());
 
-	email(to, subject, sb.toString());
+	service.email(to, subject, sb.toString());
     }
 
     // getHotelByLink
@@ -376,10 +380,10 @@ public class RoomRest extends AbstractDateTimeRest {
 	    }
 
 	    if (hotel == null) {
-		email("Unable to Find Hotel!", link);
+		service.email("Unable to Find Hotel!", link);
 	    }
 	} catch (DateTimeParseException | UnsupportedEncodingException e) {
-	    emailException("Exception thrown while parsing: " + href, e);
+	    service.emailException("Exception thrown while parsing: " + href, e);
 	}
 
 	return hotel;

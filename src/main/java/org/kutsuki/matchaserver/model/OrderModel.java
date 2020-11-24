@@ -8,7 +8,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.kutsuki.matchaserver.document.Position;
 
 public class OrderModel {
-
     private BigDecimal priceBD;
     private List<Position> positionList;
     private String price;
