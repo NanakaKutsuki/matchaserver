@@ -19,8 +19,8 @@ public class EmailService {
     private static final String EXCEPTION_SUBJECT = "Exception Thrown";
     private static final String LINE_BREAK = "<br/>";
 
-    @Value("${email.matcha}")
-    private String matcha;
+    @Value("${spring.mail.username}")
+    private String from;
 
     @Value("${email.home}")
     private String home;
@@ -28,18 +28,13 @@ public class EmailService {
     @Autowired
     private JavaMailSender javaMailSender;
 
-    // email
-    public void email(String bcc, String subject, String htmlBody) {
-	email(matcha, bcc, subject, htmlBody);
-    }
-
     // emailHome
     public void email(String subject, String htmlBody) {
-	email(matcha, null, subject, htmlBody);
+	email(null, subject, htmlBody);
     }
 
     // email
-    public void email(String from, String bcc, String subject, String htmlBody) {
+    public void email(String bcc, String subject, String htmlBody) {
 	try {
 	    MimeMessage msg = javaMailSender.createMimeMessage();
 	    MimeMessageHelper helper = new MimeMessageHelper(msg, true);

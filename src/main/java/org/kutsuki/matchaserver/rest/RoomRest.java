@@ -42,6 +42,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class RoomRest extends AbstractDateTimeRest {
     private static final BigDecimal ALERT = BigDecimal.TEN;
     private static final DateTimeFormatter MMMM_DD_YYYY = DateTimeFormatter.ofPattern("MMMM dd, YYYY EEEE");
+    private static final DateTimeFormatter HMMA = DateTimeFormatter.ofPattern("h:mma");
     private static final NumberFormat CURRENCY = NumberFormat.getCurrencyInstance();
     private static final String SOLD_OUT_TITLE = "SOLD OUT! ";
 
@@ -322,7 +323,7 @@ public class RoomRest extends AbstractDateTimeRest {
 	sb.append("Checking in ").append(MMMM_DD_YYYY.format(room.getZonedDateTime())).append(service.getLineBreak());
 	sb.append("Previous Rate: ").append(CURRENCY.format(prev)).append(service.getLineBreak());
 	sb.append("Current Rate: ").append(CURRENCY.format(room.getRate())).append(service.getLineBreak());
-	sb.append("Generated: ").append(now());
+	sb.append("Generated: ").append(HMMA.format(now()));
 
 	service.email(to, subject, sb.toString());
     }
@@ -338,7 +339,7 @@ public class RoomRest extends AbstractDateTimeRest {
 	if (room.getRate().compareTo(BigDecimal.ZERO) > 0) {
 	    sb.append("Previous Rate: ").append(CURRENCY.format(room.getRate())).append(service.getLineBreak());
 	}
-	sb.append("Generated: ").append(now()).append(service.getLineBreak());
+	sb.append("Generated: ").append(HMMA.format(now())).append(service.getLineBreak());
 	sb.append("SOLD OUT!!!");
 
 	service.email(to, subject, sb.toString());
@@ -355,8 +356,8 @@ public class RoomRest extends AbstractDateTimeRest {
 	if (room.getRate().compareTo(BigDecimal.ZERO) > 0) {
 	    sb.append("Previous Rate: ").append(CURRENCY.format(prev)).append(service.getLineBreak());
 	}
-	sb.append("Current Rate: ").append(CURRENCY.format(room.getRate()));
-	sb.append("Generated: ").append(now());
+	sb.append("Current Rate: ").append(CURRENCY.format(room.getRate())).append(service.getLineBreak());
+	sb.append("Generated: ").append(HMMA.format(now()));
 
 	service.email(to, subject, sb.toString());
     }
