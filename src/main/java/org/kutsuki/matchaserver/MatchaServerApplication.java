@@ -19,7 +19,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class MatchaServerApplication {
     private static final String CONFIDENTIAL = "CONFIDENTIAL";
     private static final String CONNECTOR = "org.apache.coyote.http11.Http11NioProtocol";
-    private static final String GET = "GET";
     private static final String HTTP = "http";
     private static final String MAPPING = "/**";
     private static final String PATTERN = "/*";
@@ -29,9 +28,6 @@ public class MatchaServerApplication {
 
     @Value("${server.port}")
     private int redirectPort;
-
-    @Value("${allowed.origins}")
-    private String allowedOrigins;
 
     public static void main(String[] args) {
 	SpringApplication.run(MatchaServerApplication.class, args);
@@ -60,7 +56,7 @@ public class MatchaServerApplication {
 	return new WebMvcConfigurer() {
 	    @Override
 	    public void addCorsMappings(CorsRegistry registry) {
-		registry.addMapping(MAPPING).allowedOrigins(allowedOrigins).allowedMethods(GET);
+		registry.addMapping(MAPPING);
 	    }
 	};
     }
