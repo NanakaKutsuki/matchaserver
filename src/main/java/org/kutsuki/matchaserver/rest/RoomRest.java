@@ -59,7 +59,8 @@ public class RoomRest extends AbstractDateTimeRest {
     private EmailService service;
 
     @GetMapping("/rest/room/getRooms")
-    public List<EventModel> getRooms(@RequestParam("cityId") String cityId, @RequestParam("start") String startDate) {
+    public List<EventModel> getRooms(@RequestParam(value = "cityId", required = true) String cityId,
+	    @RequestParam(value = "start", required = true) String startDate) {
 	List<EventModel> eventList = new ArrayList<EventModel>();
 
 	try {
@@ -119,7 +120,8 @@ public class RoomRest extends AbstractDateTimeRest {
     }
 
     @GetMapping("/rest/room/getRoomDetail")
-    public List<Room> getRoomsDetail(@RequestParam("hotelId") String hotelId, @RequestParam("start") String startDate) {
+    public List<Room> getRoomsDetail(@RequestParam(value = "hotelId", required = true) String hotelId,
+	    @RequestParam(value = "start", required = true) String startDate) {
 	Date start = toDate(toZonedDateTime(startDate, LocalTime.MIN));
 	Date end = toDate(toZonedDateTime(startDate, LocalTime.MAX));
 
@@ -130,7 +132,8 @@ public class RoomRest extends AbstractDateTimeRest {
     }
 
     @GetMapping("/rest/room/indexRoom")
-    public ResponseEntity<String> indexRoom(@RequestParam("rate") String rate, @RequestParam("href") String href) {
+    public ResponseEntity<String> indexRoom(@RequestParam(value = "rate", required = true) String rate,
+	    @RequestParam(value = "href", required = true) String href) {
 	// find hotel
 	Hotel hotel = getHotelByLink(href);
 
@@ -203,7 +206,7 @@ public class RoomRest extends AbstractDateTimeRest {
     }
 
     @GetMapping("/rest/room/soldOut")
-    public ResponseEntity<String> soldOut(@RequestParam("href") String href) {
+    public ResponseEntity<String> soldOut(@RequestParam(value = "href", required = true) String href) {
 	// indexing Sold Out
 	indexRoom(null, href);
 

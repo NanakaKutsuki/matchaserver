@@ -60,9 +60,11 @@ public class BeatingRest {
     }
 
     @GetMapping("/rest/beating/addEvent")
-    public ResponseEntity<String> addBeating(@RequestParam("date") String date, @RequestParam("place") String place,
-	    @RequestParam("loser") String loser, @RequestParam("total") String total,
-	    @RequestParam("playerMap") String playerMap) {
+    public ResponseEntity<String> addBeating(@RequestParam(value = "date", required = true) String date,
+	    @RequestParam(value = "place", required = true) String place,
+	    @RequestParam(value = "loser", required = true) String loser,
+	    @RequestParam(value = "total", required = true) String total,
+	    @RequestParam(value = "playerMap", required = true) String playerMap) {
 	if (StringUtils.isNotBlank(date) && StringUtils.isNotBlank(place) && StringUtils.isNotBlank(loser)
 		&& StringUtils.isNotBlank(loser) && StringUtils.isNotBlank(total)
 		&& StringUtils.isNotBlank(playerMap)) {
