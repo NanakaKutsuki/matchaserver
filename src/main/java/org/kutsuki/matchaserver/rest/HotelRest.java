@@ -29,13 +29,19 @@ public class HotelRest extends AbstractDateTimeRest {
     private static final String HEADER = "https://www.trivago.com/?";
     public static final String ARRIVE = "aDateRange[arr]=";
     private static final String DEPART = "&aDateRange[dep]=";
-    private static final String RANGE = "&aPriceRange[from]=0&aPriceRange[to]=0";
-    private static final String PATH_ID = "&iPathId=";
-    private static final String LAT = "&aGeoCode[lat]=";
-    private static final String LON = "&aGeoCode[lng]=";
-    public static final String GEO_DISTANCE_ITEM = "&iGeoDistanceItem=";
-    private static final String CPT = "&aCategoryRange=0,1,2,3,4,5&aOverallLiking=1,2,3,4,5&sOrderBy=relevance%20desc&bTopDealsOnly=false&iRoomType=7&cpt=";
-    private static final String FOOTER = "&iIncludeAll=0&iViewType=0&bIsSeoPage=false&bIsSitemap=false&";
+    private static final String ROOM = "&iRoomType=7&aRooms[0][adults]=2";
+    private static final String CPT2 = "&cpt2=";
+    public static final String SHARED = "/100&hasList=1&hasMap=0&sharedcid=";
+    private static final String OVERVIEW = "&tab=overview&ra=";
+
+    // old
+//    private static final String RANGE = "&aPriceRange[from]=0&aPriceRange[to]=0";
+//    private static final String PATH_ID = "&iPathId=";
+//    private static final String LAT = "&aGeoCode[lat]=";
+//    private static final String LON = "&aGeoCode[lng]=";
+//    private static final String GEO_DISTANCE_ITEM = "&iGeoDistanceItem=";
+//    private static final String CPT = "&aCategoryRange=0,1,2,3,4,5&aOverallLiking=1,2,3,4,5&sOrderBy=relevance%20desc&bTopDealsOnly=false&iRoomType=7&cpt=";
+//    private static final String FOOTER = "&iIncludeAll=0&iViewType=0&bIsSeoPage=false&bIsSitemap=false&";
 
     private boolean sent;
     private List<String> hotelList;
@@ -239,29 +245,35 @@ public class HotelRest extends AbstractDateTimeRest {
 	    sb.append(YYYYMMDD.format(hotel.getNextRuntime()));
 	    sb.append(DEPART);
 	    sb.append(YYYYMMDD.format(hotel.getNextRuntime().plusDays(1)));
-	    sb.append(RANGE);
-
-	    if (hotel.getPathId() != null) {
-		sb.append(PATH_ID);
-		sb.append(hotel.getPathId());
-	    }
-
-	    if (hotel.getLatitude() != null) {
-		sb.append(LAT);
-		sb.append(hotel.getLatitude());
-	    }
-
-	    if (hotel.getLongitude() != null) {
-		sb.append(LON);
-		sb.append(hotel.getLongitude());
-	    }
-
-	    sb.append(GEO_DISTANCE_ITEM);
+	    sb.append(ROOM);
+	    sb.append(CPT2);
 	    sb.append(hotel.getTrivagoId());
-	    // iGeoDistanceLimit here
-	    sb.append(CPT);
-	    sb.append(hotel.getCPT());
-	    sb.append(FOOTER);
+	    sb.append(SHARED);
+	    sb.append(hotel.getTrivagoId());
+	    sb.append(OVERVIEW);
+
+//	    sb.append(RANGE);
+//	    if (hotel.getPathId() != null) {
+//		sb.append(PATH_ID);
+//		sb.append(hotel.getPathId());
+//	    }
+//
+//	    if (hotel.getLatitude() != null) {
+//		sb.append(LAT);
+//		sb.append(hotel.getLatitude());
+//	    }
+//
+//	    if (hotel.getLongitude() != null) {
+//		sb.append(LON);
+//		sb.append(hotel.getLongitude());
+//	    }
+//
+//	    sb.append(GEO_DISTANCE_ITEM);
+//	    sb.append(hotel.getTrivagoId());
+//	    // iGeoDistanceLimit here
+//	    sb.append(CPT);
+//	    sb.append(hotel.getCPT());
+//	    sb.append(FOOTER);
 	    link = sb.toString();
 	}
 

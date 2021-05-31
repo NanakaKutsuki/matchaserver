@@ -366,13 +366,13 @@ public class RoomRest extends AbstractDateTimeRest {
     }
 
     // getHotelByLink
-    private Hotel getHotelByLink(String href) {
+    public Hotel getHotelByLink(String href) {
 	Hotel hotel = null;
 
 	try {
 	    String link = URLDecoder.decode(href, StandardCharsets.UTF_8.toString());
 
-	    String trivagoId = StringUtils.substringBetween(link, HotelRest.GEO_DISTANCE_ITEM, Character.toString('&'));
+	    String trivagoId = StringUtils.substringBetween(link, HotelRest.SHARED, Character.toString('&'));
 	    String date = StringUtils.substringBetween(link, HotelRest.ARRIVE, Character.toString('&'));
 
 	    if (StringUtils.isNotBlank(trivagoId) && StringUtils.isNotBlank(date)) {
