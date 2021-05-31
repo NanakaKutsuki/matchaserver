@@ -139,26 +139,6 @@ public class HotelRest extends AbstractDateTimeRest {
 	return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/rest/hotel/reloadHotel")
-    public ResponseEntity<String> reloadHotel(@RequestParam(value = "hotelId", required = true) String hotelId) {
-	Hotel hotel = getHotelById(hotelId);
-
-	if (hotel != null) {
-	    hotel.setNextRuntime(now());
-	    hotel.setRetries(0);
-
-	    if (!hotelList.contains(hotel.getId())) {
-		hotelList.add(hotel.getId());
-		MatchaTracker.UNFINISHED_MAP.put(hotel.getId(), hotel);
-	    }
-
-	    Collections.shuffle(hotelList);
-	}
-
-	// return finished
-	return ResponseEntity.ok().build();
-    }
-
     @GetMapping("/rest/hotel/reloadHotels")
     public ResponseEntity<String> reloadHotels(@RequestParam(value = "cityId", required = true) String cityId) {
 	for (Hotel hotel : repository.findAllByCityIdAndActiveTrue(cityId)) {
